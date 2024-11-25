@@ -2,6 +2,113 @@
 #include "Injector.h"
 #include <DbgHelp.h>
 #include <stdio.h>
+#include <map>
+
+bool hasClipboardInformation = 0;
+wchar_t clipboardBytes[2048] = {0};
+
+HANDLE
+WINAPI
+HookedGetClipboardData(
+	_In_ UINT uFormat) {
+	if (hasClipboardInformation) {
+		return (HANDLE)1;
+	}
+	return GetClipboardData(uFormat);
+}
+
+BOOL
+WINAPI
+HookedGlobalUnlock(
+	_In_ HGLOBAL hMem
+) {
+	if (hasClipboardInformation && hMem == (HGLOBAL)1) {
+		hasClipboardInformation = false;
+		memset(clipboardBytes, 0, sizeof(clipboardBytes));
+		return TRUE;
+	}
+	return GlobalUnlock(hMem);
+}
+
+LPVOID
+WINAPI
+HookedGlobalLock(
+	_In_ HGLOBAL hMem
+) {
+	if (hasClipboardInformation && hMem == (HGLOBAL)1) {
+		return clipboardBytes;
+	}
+	return GlobalLock(hMem);
+}
+
+
+bool handleInputDBCS(const MSG* msg) {
+	static char bytes[2] = { 0,0 };
+	if (bytes[0] == 0) {
+		if (!IsDBCSLeadByte(msg->wParam)) {
+			return false;
+		}
+		bytes[0] = msg->wParam;
+		return true;
+	}
+	else {
+		bytes[1] = msg->wParam;
+
+		int len = 20;
+		wchar_t w;
+		int has_val = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bytes, 2, &w, 1);
+		for (int i = 0; i < 2000; i++) {
+			if (clipboardBytes[i] == 0) {
+				clipboardBytes[i + 1] = 0;
+				clipboardBytes[i] = w;
+				break;
+			}
+		}
+
+		if (!hasClipboardInformation) {
+			hasClipboardInformation = true;
+			//send a ctrl v command here
+			INPUT inputs[4] = {};
+			ZeroMemory(inputs, sizeof(inputs));
+			inputs[0].type = INPUT_KEYBOARD;
+			inputs[0].ki.wVk = VK_LCONTROL;
+			inputs[1].type = INPUT_KEYBOARD;
+			inputs[1].ki.wVk = 'V';
+			inputs[2].type = INPUT_KEYBOARD;
+			inputs[2].ki.wVk = 'V';
+			inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+			inputs[3].type = INPUT_KEYBOARD;
+			inputs[3].ki.wVk = VK_LCONTROL;
+			inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+			SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+
+		}
+		bytes[0] = 0;
+		return true;
+	}
+}
+/* fix the chinese input bug via dispatch message */
+LRESULT
+WINAPI
+HookedDispatchMessageA(
+	_In_ CONST MSG* lpMsg) {
+	
+	if (lpMsg->message == WM_CHAR) {
+		switch (GetACP()) {
+		case 932: //shift_jis		Japanese
+		case 936: //gb2312			Chinese Simplified
+		case 949: //ks_c_5601-1987	Korean
+		case 950: //big5			Chinese Traditional
+			if (handleInputDBCS(lpMsg))
+				return true;
+		default:
+			break;
+		}
+	}
+	
+	return DispatchMessageA(lpMsg);
+}
+
 /* 
 signature 描述：是已经打好补丁的signature，其中：
 0xcc：此处是偏移，不做匹配
@@ -32,8 +139,21 @@ void sigpatch(unsigned char * signature, int size, void* pos) {
 		}
 	}
 }
+
+
 void Inject() {
 	int matched_count = 0;
+
+	std::map<void*, void*> replaceTask{
+		//{CreateWindowExA, HookedCreateWindowExA},
+		{DispatchMessageA, HookedDispatchMessageA},
+		{GetClipboardData, HookedGetClipboardData},
+		{GlobalLock, HookedGlobalLock},
+		{GlobalUnlock, HookedGlobalUnlock},
+		//{SwapBuffers, HookedSwapBuffers},
+	};
+
+	bool FIX_INPUT = GetFileAttributesW(L"fixinput.txt") != INVALID_FILE_ATTRIBUTES;
 
 	unsigned char* base = (unsigned char*)GetModuleHandleA(NULL);
 	IMAGE_NT_HEADERS* pNtHdr = ImageNtHeader(base);
@@ -61,14 +181,31 @@ void Inject() {
 			}
 
 			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, oldprotect, &oldprotect);
-			break;
 		}
+		if (FIX_INPUT && strcmp(".rdata", name) == 0) {
+			void** sec_begin = (void**)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
+			void** sec_end = (void**)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
+
+			DWORD oldprotect;
+			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, PAGE_READWRITE, &oldprotect);
+			void** it = sec_begin;
+			while (it < sec_end && replaceTask.size() > 0) {
+				auto mit = replaceTask.find(*it);
+				if (mit != replaceTask.end()) {
+					*it = mit->second;
+					replaceTask.erase(mit);
+				}
+				++it;
+			}
+			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, oldprotect, &oldprotect);
+		}
+
 		pSectionHdr++;
 	}
 	if (matched_count != 1) {
-		char buff[1024];
-		sprintf(buff, "Language option patch not found: %d function signature was patched.", matched_count);
-		MessageBoxA(NULL, buff, "Information", 0);
+		wchar_t buff[1024];
+		wsprintfW(buff, L"函数签名没有补丁成功（共成功%d个，预期1个），您的汉化程序与游戏版本不匹配，请去除或更新汉化补丁。", matched_count);
+		MessageBoxW(NULL, buff, L"汉化补丁报告", 0);
 	}
 }
 
@@ -91,9 +228,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
 					 )
 {
+	static bool isLoaded = false;
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
+		if (isLoaded)return FALSE; isLoaded = true;
 		OriginalGetUserProfileDirectoryA = NULL;
 		{
 			h = LoadLibraryA("C:\\Windows\\System32\\userenv.dll");
@@ -103,10 +242,13 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 			OriginalGetUserProfileDirectoryW = (decltype(OriginalGetUserProfileDirectoryW))GetProcAddress(h, "GetUserProfileDirectoryW");
 			Inject();
 		}
+		//load self to prevent use after free if the game called FreeLibrary later
+		LoadLibrary("userenv.dll");
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
 	case DLL_THREAD_DETACH:
+		break;
 	case DLL_PROCESS_DETACH:
 		if (h) {
 			OriginalGetUserProfileDirectoryA = NULL;
