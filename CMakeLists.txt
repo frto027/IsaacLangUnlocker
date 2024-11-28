@@ -7,7 +7,7 @@ add_library(userenv SHARED
     stdafx.cpp
 )
 target_link_libraries(userenv
-    dbghelp.lib
+    dbghelp.lib Winmm.lib
 )
 target_link_options(
     userenv PRIVATE /DEF:${PROJECT_SOURCE_DIR}/Source.def

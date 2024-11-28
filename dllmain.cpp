@@ -3,15 +3,40 @@
 #include <DbgHelp.h>
 #include <stdio.h>
 #include <map>
+#include <time.h>
+#include <timeapi.h>
 
 bool hasClipboardInformation = 0;
-wchar_t clipboardBytes[2048] = {0};
+DWORD lastClipboardInformation = 0;
+wchar_t clipboardBytes[2048] = { 0 };
+
+HWND cancelKeyDownHwnd = 0;
+DWORD lastCancelKeyDownTime = 0;
+void CheckCancelKeyDown() {
+	if (cancelKeyDownHwnd && timeGetTime() - lastCancelKeyDownTime > 2 * 1000 / 60) {
+		SendMessageA(cancelKeyDownHwnd, WM_KEYUP, 'V', 0);
+		SendMessageA(cancelKeyDownHwnd, WM_KEYUP, VK_CONTROL, 0);
+		cancelKeyDownHwnd = 0;
+	}
+}
+
+bool doesWeHasClipboardInformation() {
+	CheckCancelKeyDown();
+	if (hasClipboardInformation) {
+		if (timeGetTime() - lastClipboardInformation > 500) {
+			hasClipboardInformation = false;
+			memset(clipboardBytes, 0, sizeof(clipboardBytes));
+		}
+	}
+	return hasClipboardInformation;
+}
+
 
 HANDLE
 WINAPI
 HookedGetClipboardData(
 	_In_ UINT uFormat) {
-	if (hasClipboardInformation) {
+	if (doesWeHasClipboardInformation()) {
 		return (HANDLE)1;
 	}
 	return GetClipboardData(uFormat);
@@ -22,7 +47,7 @@ WINAPI
 HookedGlobalUnlock(
 	_In_ HGLOBAL hMem
 ) {
-	if (hasClipboardInformation && hMem == (HGLOBAL)1) {
+	if (doesWeHasClipboardInformation() && hMem == (HGLOBAL)1) {
 		hasClipboardInformation = false;
 		memset(clipboardBytes, 0, sizeof(clipboardBytes));
 		return TRUE;
@@ -35,12 +60,13 @@ WINAPI
 HookedGlobalLock(
 	_In_ HGLOBAL hMem
 ) {
-	if (hasClipboardInformation && hMem == (HGLOBAL)1) {
+	if (doesWeHasClipboardInformation() && hMem == (HGLOBAL)1) {
 		return clipboardBytes;
 	}
 	return GlobalLock(hMem);
 }
 
+bool pending_key_up = false;
 
 bool handleInputDBCS(const MSG* msg) {
 	static char bytes[2] = { 0,0 };
@@ -54,6 +80,7 @@ bool handleInputDBCS(const MSG* msg) {
 	else {
 		bytes[1] = msg->wParam;
 
+		doesWeHasClipboardInformation();//flush the input buffer here
 		int len = 20;
 		wchar_t w;
 		int has_val = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bytes, 2, &w, 1);
@@ -65,22 +92,28 @@ bool handleInputDBCS(const MSG* msg) {
 			}
 		}
 
-		if (!hasClipboardInformation) {
+		if (!doesWeHasClipboardInformation()) {
 			hasClipboardInformation = true;
+			lastClipboardInformation = timeGetTime();
+			SendMessageA(msg->hwnd, WM_KEYDOWN, VK_CONTROL, 0);
+			SendMessageA(msg->hwnd, WM_KEYDOWN, 'V', 0);
+			cancelKeyDownHwnd = msg->hwnd;
+			lastCancelKeyDownTime = timeGetTime();
 			//send a ctrl v command here
-			INPUT inputs[4] = {};
-			ZeroMemory(inputs, sizeof(inputs));
-			inputs[0].type = INPUT_KEYBOARD;
-			inputs[0].ki.wVk = VK_LCONTROL;
-			inputs[1].type = INPUT_KEYBOARD;
-			inputs[1].ki.wVk = 'V';
-			inputs[2].type = INPUT_KEYBOARD;
-			inputs[2].ki.wVk = 'V';
-			inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-			inputs[3].type = INPUT_KEYBOARD;
-			inputs[3].ki.wVk = VK_LCONTROL;
-			inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-			SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
+			//INPUT inputs[4] = {};
+			//ZeroMemory(inputs, sizeof(inputs));
+			//inputs[0].type = INPUT_KEYBOARD;
+			//inputs[0].ki.wVk = VK_LCONTROL;
+			//inputs[1].type = INPUT_KEYBOARD;
+			//inputs[1].ki.wVk = 'V';
+			//inputs[2].type = INPUT_KEYBOARD;
+			//inputs[2].ki.wVk = 'V';
+			//inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
+			//inputs[3].type = INPUT_KEYBOARD;
+			//inputs[3].ki.wVk = VK_LCONTROL;
+			//inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
+			//BringWindowToTop(msg->hwnd);
+			//SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
 
 		}
 		bytes[0] = 0;
@@ -92,7 +125,7 @@ LRESULT
 WINAPI
 HookedDispatchMessageA(
 	_In_ CONST MSG* lpMsg) {
-	
+	CheckCancelKeyDown();
 	if (lpMsg->message == WM_CHAR) {
 		switch (GetACP()) {
 		case 932: //shift_jis		Japanese
@@ -107,6 +140,16 @@ HookedDispatchMessageA(
 	}
 	
 	return DispatchMessageA(lpMsg);
+}
+
+SHORT
+WINAPI
+HookedGetAsyncKeyState(
+	_In_ int vKey) {
+	if (doesWeHasClipboardInformation()) {
+		return vKey == VK_CONTROL || vKey == VK_LCONTROL || vKey == 'V';
+	}
+	return GetAsyncKeyState(vKey);
 }
 
 /* 
@@ -150,6 +193,7 @@ void Inject() {
 		{GetClipboardData, HookedGetClipboardData},
 		{GlobalLock, HookedGlobalLock},
 		{GlobalUnlock, HookedGlobalUnlock},
+		//{GetAsyncKeyState, HookedGetAsyncKeyState},
 		//{SwapBuffers, HookedSwapBuffers},
 	};
 
