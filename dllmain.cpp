@@ -68,6 +68,25 @@ HookedGlobalLock(
 
 bool pending_key_up = false;
 
+void SendCharViaClipboard(HWND hwnd, wchar_t w) {
+	for (int i = 0; i < 2000; i++) {
+		if (clipboardBytes[i] == 0) {
+			clipboardBytes[i + 1] = 0;
+			clipboardBytes[i] = w;
+			break;
+		}
+	}
+
+	if (!doesWeHasClipboardInformation()) {
+		hasClipboardInformation = true;
+		lastClipboardInformation = timeGetTime();
+		SendMessageA(hwnd, WM_KEYDOWN, VK_CONTROL, 0);
+		SendMessageA(hwnd, WM_KEYDOWN, 'V', 0);
+		cancelKeyDownHwnd = hwnd;
+		lastCancelKeyDownTime = timeGetTime();
+	}
+}
+
 bool handleInputDBCS(const MSG* msg) {
 	static char bytes[2] = { 0,0 };
 	if (bytes[0] == 0) {
@@ -84,38 +103,7 @@ bool handleInputDBCS(const MSG* msg) {
 		int len = 20;
 		wchar_t w;
 		int has_val = ::MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bytes, 2, &w, 1);
-		for (int i = 0; i < 2000; i++) {
-			if (clipboardBytes[i] == 0) {
-				clipboardBytes[i + 1] = 0;
-				clipboardBytes[i] = w;
-				break;
-			}
-		}
-
-		if (!doesWeHasClipboardInformation()) {
-			hasClipboardInformation = true;
-			lastClipboardInformation = timeGetTime();
-			SendMessageA(msg->hwnd, WM_KEYDOWN, VK_CONTROL, 0);
-			SendMessageA(msg->hwnd, WM_KEYDOWN, 'V', 0);
-			cancelKeyDownHwnd = msg->hwnd;
-			lastCancelKeyDownTime = timeGetTime();
-			//send a ctrl v command here
-			//INPUT inputs[4] = {};
-			//ZeroMemory(inputs, sizeof(inputs));
-			//inputs[0].type = INPUT_KEYBOARD;
-			//inputs[0].ki.wVk = VK_LCONTROL;
-			//inputs[1].type = INPUT_KEYBOARD;
-			//inputs[1].ki.wVk = 'V';
-			//inputs[2].type = INPUT_KEYBOARD;
-			//inputs[2].ki.wVk = 'V';
-			//inputs[2].ki.dwFlags = KEYEVENTF_KEYUP;
-			//inputs[3].type = INPUT_KEYBOARD;
-			//inputs[3].ki.wVk = VK_LCONTROL;
-			//inputs[3].ki.dwFlags = KEYEVENTF_KEYUP;
-			//BringWindowToTop(msg->hwnd);
-			//SendInput(ARRAYSIZE(inputs), inputs, sizeof(INPUT));
-
-		}
+		SendCharViaClipboard(msg->hwnd, w);
 		bytes[0] = 0;
 		return true;
 	}
@@ -126,7 +114,18 @@ WINAPI
 HookedDispatchMessageA(
 	_In_ CONST MSG* lpMsg) {
 	CheckCancelKeyDown();
-	if (lpMsg->message == WM_CHAR) {
+	static bool isPressed[26];
+	if (lpMsg->message == WM_KEYDOWN) {
+		if (lpMsg->wParam >= 'A' && lpMsg->wParam <= 'Z') {
+			isPressed[lpMsg->wParam - 'A'] = 1;
+		}
+	}
+	else if (lpMsg->message == WM_KEYUP) {
+		if (lpMsg->wParam >= 'A' && lpMsg->wParam <= 'Z') {
+			isPressed[lpMsg->wParam - 'A'] = 0;
+		}
+	}
+	else if (lpMsg->message == WM_CHAR) {
 		switch (GetACP()) {
 		case 932: //shift_jis		Japanese
 		case 936: //gb2312			Chinese Simplified
@@ -134,6 +133,13 @@ HookedDispatchMessageA(
 		case 950: //big5			Chinese Traditional
 			if (handleInputDBCS(lpMsg))
 				return true;
+			if (
+				(lpMsg->wParam >= 'A' && lpMsg->wParam <= 'Z' && !isPressed[lpMsg->wParam - 'A']) ||
+				(lpMsg->wParam >= 'a' && lpMsg->wParam <= 'z' && !isPressed[lpMsg->wParam - 'a'])
+				) {
+				SendCharViaClipboard(lpMsg->hwnd, lpMsg->wParam);
+				return true;
+			}
 		default:
 			break;
 		}
@@ -184,7 +190,7 @@ void sigpatch(unsigned char * signature, int size, void* pos) {
 }
 
 
-void Inject() {
+void Inject(bool i18nOnly = false) {
 	int matched_count = 0;
 
 	std::map<void*, void*> replaceTask{
@@ -198,6 +204,9 @@ void Inject() {
 	};
 
 	bool FIX_INPUT = GetFileAttributesW(L"fixinput.txt") != INVALID_FILE_ATTRIBUTES;
+
+	if (i18nOnly)
+		FIX_INPUT = false;
 
 	unsigned char* base = (unsigned char*)GetModuleHandleA(NULL);
 	IMAGE_NT_HEADERS* pNtHdr = ImageNtHeader(base);
@@ -281,13 +290,35 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		{
 			h = LoadLibraryA("C:\\Windows\\System32\\userenv.dll");
 			if (h == NULL)
+				h = LoadLibraryA("C:\\Windows\\SysWOW64\\userenv.dll");
+			if (h == NULL) {
+				Inject(true);
 				break;
+			}
+			
 			OriginalGetUserProfileDirectoryA = (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(h, "GetUserProfileDirectoryA");
 			OriginalGetUserProfileDirectoryW = (decltype(OriginalGetUserProfileDirectoryW))GetProcAddress(h, "GetUserProfileDirectoryW");
-			Inject();
+			Inject(false);
 		}
 		//load self to prevent use after free if the game called FreeLibrary later
-		LoadLibrary("userenv.dll");
+		wchar_t filename[1024];
+		if (GetModuleFileNameW(hModule, filename, sizeof(filename)/sizeof(*filename))) {
+			HMODULE ret = LoadLibraryW(filename);
+			if (ret) {
+				//pass
+			}
+			else {
+				MessageBoxW(NULL, L"二进制补丁保活失效，补丁未能获取到正确的自身路径并进行自加载", L"汉化补丁报告", 0);
+			}
+		}
+		else {
+			if (GetFileAttributesW(L"userdna.txt") != INVALID_FILE_ATTRIBUTES) {
+				LoadLibrary("userdna.dll");
+			}
+			else {
+				LoadLibrary("userenv.dll");
+			}
+		}
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
