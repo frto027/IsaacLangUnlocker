@@ -5,6 +5,10 @@
 #include <map>
 #include <time.h>
 #include <timeapi.h>
+#include "config.h"
+#include <stdlib.h>
+
+Config config("fixlang.ini");
 
 bool hasClipboardInformation = 0;
 DWORD lastClipboardInformation = 0;
@@ -182,13 +186,77 @@ bool sigmatch(unsigned char * signature, int size, void * pos) {
 
 void sigpatch(unsigned char * signature, int size, void* pos) {
 	unsigned char* bts = (unsigned char*)pos;
+	int langID = config.GetOrDefaultInt("option", "lang", 13);
 	for (int i = 0; i < size; i++) {
 		if (signature[i] == 13 && bts[i] == 0) {
-			bts[i] = 13;
+			bts[i] = langID;
 		}
 	}
 }
+#define CS_DONT_PATCH 0
+#define CS_PATCH 1
+int CheckSumForGameResources() {
+	if (config.records.count("checksum") == 0)
+		return CS_PATCH;
+	std::wstring errs = L"";
 
+
+	for (auto it : config.records["checksum"]) {
+		std::string file = it.first;
+		wchar_t file_w[1024];
+		mbstowcs(file_w, file.c_str(), 1023);
+		std::string checksum = it.second;
+		wchar_t checksum_w[256];
+		mbstowcs(checksum_w, checksum.c_str(), 255);
+		std::ifstream f(file);
+		
+		if (!f.is_open()) {
+			errs += std::wstring(L"找不到文件 ") + file_w + L"\n";
+			continue;
+		}
+
+		uint64_t hash = 0;
+		while (!f.eof()) {
+			uint64_t single = 0;
+			for (int i = 0; i < 8 && !f.eof(); i++) {
+				single <<= 8;
+				char ch;
+				f.get(ch);
+				single |= ch;
+			}
+			hash = (hash << 5) | (hash >> 59);
+			hash ^= single;
+		}
+		wchar_t buff[128];
+		
+		
+		int buff_len = 0;
+		const char* alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHIJKMNPQRSTUVWXYZ";
+		int alpha_count = strlen(alpha);
+		while (buff_len < 127 && hash != 0) {
+			buff[buff_len++] = alpha[hash % alpha_count];
+			hash /= alpha_count;
+		}
+		buff[buff_len] = '\0';
+
+		if (lstrcmpW(buff, checksum_w)) {
+			errs += std::wstring(L"文件 ") + file_w + L" 校验失败（预期 " + checksum_w + L" ，实际 " + buff + L"）\n";
+		}
+	}
+
+	if (errs != L"") {
+		int result =MessageBoxW(NULL, (L"资源不匹配，建议重新安装或移除中文补丁。\n"
+			"可能的原因之一是，游戏更新覆盖了中文补丁的资源文件，这会导致中文补丁无法按照预期工作。\n\n详细报告：\n" + errs + L"\n强制加载中文可能导致资源混乱，接下来要做什么，请点击按钮：\n中止=关闭游戏，重试=加载中文，忽略=不加载中文").c_str(), L"中文补丁报告", MB_ABORTRETRYIGNORE | MB_ICONWARNING);
+		if (result == IDABORT) {
+			exit(0);
+		}
+		if (result == IDIGNORE) {
+			return CS_DONT_PATCH;
+		}
+		return CS_PATCH;
+	}
+	return CS_PATCH;
+}
 
 void Inject(bool i18nOnly = false) {
 	int matched_count = 0;
@@ -203,7 +271,12 @@ void Inject(bool i18nOnly = false) {
 		//{SwapBuffers, HookedSwapBuffers},
 	};
 
-	bool FIX_INPUT = GetFileAttributesW(L"fixinput.txt") != INVALID_FILE_ATTRIBUTES;
+	bool need_patch_cn = CS_PATCH == CheckSumForGameResources();
+
+	bool FIX_INPUT = false;
+
+	if (config.GetOrDefault("option", "fixinput", "0") == "1")
+		FIX_INPUT = true;
 
 	if (i18nOnly)
 		FIX_INPUT = false;
@@ -217,7 +290,7 @@ void Inject(bool i18nOnly = false) {
 		char* name = (char*)pSectionHdr->Name;
 		auto len = pSectionHdr->SizeOfRawData;
 
-		if (strcmp(".text", name) == 0) {
+		if (need_patch_cn && strcmp(".text", name) == 0) {
 			char* sec_begin = (char*)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
 			char* sec_end = (char*)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
 			DWORD oldprotect;
@@ -255,9 +328,9 @@ void Inject(bool i18nOnly = false) {
 
 		pSectionHdr++;
 	}
-	if (matched_count != 1) {
+	if (need_patch_cn && matched_count != 1) {
 		wchar_t buff[1024];
-		wsprintfW(buff, L"函数签名没有补丁成功（共成功%d个，预期1个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。", matched_count);
+		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（共成功%d个，预期1个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。", matched_count);
 		MessageBoxW(NULL, buff, L"中文补丁报告", 0);
 	}
 }
@@ -312,7 +385,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 			}
 		}
 		else {
-			if (GetFileAttributesW(L"userdna.txt") != INVALID_FILE_ATTRIBUTES) {
+			if (GetFileAttributesW(L"userdna.dll") != INVALID_FILE_ATTRIBUTES) {
 				LoadLibrary("userdna.dll");
 			}
 			else {
