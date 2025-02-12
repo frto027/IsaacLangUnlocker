@@ -169,6 +169,7 @@ signature 描述：是已经打好补丁的signature，其中：
 */
 unsigned char signature_ver2[140] = "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\x8C\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x8C\xA6\x04\x00\x74\x0A\xC7\x86\x88\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xA4\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xA4\xA6\x04\x00\x74\x0A\xC7\x86\xA0\xA6\x04\x00\x0D\x00\x00\x00\xE8\xCC\xCC\xCC\xCC\x5E\x8B\xE5\x5D\xC2\x04\x00";
 unsigned char signature_ver3[128] = "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\xB8\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xB8\xA6\x04\x00\x74\x0A\xC7\x86\xB4\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xD0\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xD0\xA6\x04\x00\x74\x0A\xC7\x86\xCC\xA6\x04\x00\x0D\x00\x00\x00";
+unsigned char signature_ver4[119] = "\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\xDC\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xDC\xA6\x04\x00\x74\x0A\xC7\x86\xD8\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xF4\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xF4\xA6\x04\x00\x74\x0A\xC7\x86\xF0\xA6\x04\x00\x0D\x00\x00\x00";
 bool sigmatch(unsigned char * signature, int size, void * pos) {
 	unsigned char* bts = (unsigned char*)pos;
 	for (int i = 0; i < size; i++) {
@@ -257,6 +258,7 @@ int CheckSumForGameResources() {
 	}
 	return CS_PATCH;
 }
+#include <list>
 
 void Inject(bool i18nOnly = false) {
 	int matched_count = 0;
@@ -270,6 +272,20 @@ void Inject(bool i18nOnly = false) {
 		//{GetAsyncKeyState, HookedGetAsyncKeyState},
 		//{SwapBuffers, HookedSwapBuffers},
 	};
+
+	std::list<std::pair<const std::string, const std::string> > replaceStrTasks;
+
+	if (config.records.count("text")) {
+		for (auto& pair : config.records["text"]) {
+			if (pair.first.size() < pair.second.size()) {
+				std::string err = "Translate string is too long: ";
+				err += pair.first;
+				MessageBoxA(NULL, err.c_str(), "ERROR", 0);
+				continue;
+			}
+			replaceStrTasks.push_back(pair);
+		}
+	}
 
 	bool need_patch_cn = CS_PATCH == CheckSumForGameResources();
 
@@ -298,8 +314,8 @@ void Inject(bool i18nOnly = false) {
 			char* it = sec_begin;
 
 			while (it < sec_end) {
-				if (sigmatch(signature_ver3, sizeof(signature_ver3)-1, it)) {
-					sigpatch(signature_ver3, sizeof(signature_ver3)-1, it);
+				if (sigmatch(signature_ver4, sizeof(signature_ver4)-1, it)) {
+					sigpatch(signature_ver4, sizeof(signature_ver4)-1, it);
 					matched_count++;
 					break;//speed up, but less bug report
 				}
@@ -308,18 +324,27 @@ void Inject(bool i18nOnly = false) {
 
 			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, oldprotect, &oldprotect);
 		}
-		if (FIX_INPUT && strcmp(".rdata", name) == 0) {
+		if (strcmp(".rdata", name) == 0) {
 			void** sec_begin = (void**)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
 			void** sec_end = (void**)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
 
 			DWORD oldprotect;
 			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, PAGE_READWRITE, &oldprotect);
 			void** it = sec_begin;
-			while (it < sec_end && replaceTask.size() > 0) {
-				auto mit = replaceTask.find(*it);
-				if (mit != replaceTask.end()) {
-					*it = mit->second;
-					replaceTask.erase(mit);
+			while (it < sec_end && (replaceTask.size() > 0 || replaceStrTasks.size() > 0)) {
+				if (FIX_INPUT && replaceTask.size() > 0) {
+					auto mit = replaceTask.find(*it);
+					if (mit != replaceTask.end()) {
+						*it = mit->second;
+						replaceTask.erase(mit);
+					}
+				}
+
+				for (auto tit = replaceStrTasks.begin(), end = replaceStrTasks.end(); tit != end; ++tit) {
+					if (strncmp(tit->first.c_str(), (char*)it, tit->first.size()) == 0) {
+						strcpy((char*)it, tit->second.c_str());
+						replaceStrTasks.erase(tit);
+					}
 				}
 				++it;
 			}
