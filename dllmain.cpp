@@ -183,12 +183,13 @@ unsigned char signature_ver_1_9_7_13[121] =                             "\x8B\xF
 
 struct StringReplaceTask {
 	//uint32_t ptr;
-	char* from, * to;
+	char* from;
+	std::string to;
 	int expectedDoneTime;
 	int doneTime = 0;
 	ZydisMnemonic_ mnemonic = ZYDIS_MNEMONIC_INVALID;
 
-	StringReplaceTask(char* from, char* to, int expected = 1, ZydisMnemonic_ mnemonic = ZYDIS_MNEMONIC_INVALID) :from(from), to(to), expectedDoneTime(expected), mnemonic(mnemonic){}
+	StringReplaceTask(char* from, std::string to, int expected = 1, ZydisMnemonic_ mnemonic = ZYDIS_MNEMONIC_INVALID) :from(from), to(to), expectedDoneTime(expected), mnemonic(mnemonic){}
 };
 
 struct FunctionRange {
@@ -202,13 +203,13 @@ struct FunctionRange {
 std::vector<StringReplaceTask> propRepTasks = {
 };
 
-std::vector<std::pair<const char*, const char *>> strmaps = {
-	{ " Speed", u8" 移速"},
-	{ " Tears", u8" 射速"},
-	{ " Damage", u8" 伤害"},
-	{ " Range", u8" 射程"},
-	{ " Shot Speed", u8" 弹速"},
-	{ " Luck", u8" 幸运"},
+std::vector<std::pair<const char*, std::string>> strmaps = {
+	{ " Speed", config.GetOrDefault("Trans", "speed", u8" 移速")},
+	{ " Tears", config.GetOrDefault("Trans", "tears", u8" 射速")},
+	{ " Damage",config.GetOrDefault("Trans", "damage", u8" 伤害")},
+	{ " Range", config.GetOrDefault("Trans", "range", u8" 射程")},
+	{ " Shot Speed", config.GetOrDefault("Trans","shotspeed", u8" 弹速")},
+	{ " Luck", config.GetOrDefault("Trans", "luck", u8" 幸运")},
 };
 // 更新点3 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
 #define IID_COLOR_FUNC_OFFSET (0x0084DA90 - IDA_BASE)
@@ -220,18 +221,17 @@ struct ComplexStr {
 };
 
 int prop_render_patched_count = 0;
-int prop_render_excepted_patch_count = 12; // 版本更新则需要更新这个
+int prop_render_excepted_patch_count = 12; // 这个变量是以iid_proprender为callee的call指令hook次数（预期），用于检测补丁过时
 void(__fastcall * orig_patched_iid_proprender)(char *a1, char* ptr, ComplexStr* ptr2);
 
 
 void __fastcall patched_iid_proprender(char* a1, char* ptr, ComplexStr* ptr2) {
 	//千万别碰xmm0寄存器，这里传了一个参数，透明过去！
-	//char buff[64];
 	for (auto it = strmaps.begin(), end = strmaps.end(); it != end; ++it) {
-		if (strncmp(ptr2->buff, it->first, ptr2->len) == 0 && ptr2->cap >= strlen(it->second))
+		if (strncmp(ptr2->buff, it->first, ptr2->len) == 0 && ptr2->cap >= it->second.size())
 		{
-			strcpy(ptr2->buff, it->second);
-			ptr2->len = strlen(it->second);
+			strcpy(ptr2->buff, it->second.c_str());
+			ptr2->len = it->second.size();
 			break;
 		}
 	}
@@ -241,17 +241,17 @@ void __fastcall patched_iid_proprender(char* a1, char* ptr, ComplexStr* ptr2) {
 //更新点2 图鉴补丁
 std::vector<FunctionRange> strReplaceTasksFunc = {
 	{0x84F080 - IDA_BASE, {
-		{" empty red health", u8"空容器"}, //搜索empty red health
-		{" health", u8"红心"},
-		{"Heals all red hearts",u8"治愈所有红心"},
-		{"Heals ", u8"治愈 "},
-		{" red heart", u8" 红心"},
-		{" soul heart", u8" 魂心"},
-		{" black heart", u8" 黑心"},
-		{" bomb", u8" 炸弹"},
-		{" key", u8" 钥匙"},
-		{" coin", u8" 金币"},
-		{"s", "", 6, ZYDIS_MNEMONIC_PUSH},
+		{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器"			)		},//搜索empty red health
+		{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心"			)		},
+		{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心"	)		},
+		{"Heals ", 							config.GetOrDefault("Trans", "heals",					u8"治愈 "			)		},
+		{" red heart", 						config.GetOrDefault("Trans", "_red_heart",			 	u8" 红心"			)		},
+		{" soul heart", 					config.GetOrDefault("Trans", "_soul_heart",			 	u8" 魂心"			)		},
+		{" black heart", 					config.GetOrDefault("Trans", "_black_heart",			u8" 黑心"			)		},
+		{" bomb", 							config.GetOrDefault("Trans", "_bomb",				 	u8" 炸弹"			)		},
+		{" key", 							config.GetOrDefault("Trans", "_key",					u8" 钥匙"			)		},
+		{" coin", 							config.GetOrDefault("Trans", "_coin",				 	u8" 金币"			)		},
+		{"s", 								"", 6, ZYDIS_MNEMONIC_PUSH},
 	}},
 
 	//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
@@ -350,6 +350,13 @@ int CheckSumForGameResources() {
 }
 #include <list>
 
+static const char* leakStr(const std::string& str) {
+	char* buff =(char*)malloc(str.size() + 1);
+	if (buff)
+		strcpy(buff, str.c_str());
+	return buff;
+}
+
 void PatchZydisTask(unsigned char* base, char * sec_begin, char * sec_end, char *rdata_sec_beg, char *rdata_sec_end) {
 	for (auto& func : strReplaceTasksFunc) {
 		char* fbase = (char*)(func.base + base);
@@ -371,17 +378,17 @@ void PatchZydisTask(unsigned char* base, char * sec_begin, char * sec_end, char 
 				break;//done
 
 			if (inst.length >= 5) {
-				char** strptr_maybe = (char**)(fbase - 4);
+				const char** strptr_maybe = (const char**)(fbase - 4);
 				if (rdata_sec_beg < *strptr_maybe && *strptr_maybe < rdata_sec_end) {
 					for (auto& tsk : func.strReplaceTasks) {
 						if (tsk.mnemonic != ZYDIS_MNEMONIC_INVALID && inst.mnemonic != tsk.mnemonic)
 							continue;
 						if (strcmp(tsk.from, *strptr_maybe) == 0) {
-							*strptr_maybe = tsk.to;
+							*strptr_maybe = leakStr(tsk.to);
 							tsk.doneTime++;
-
+							
 							if (push_imm_last && *push_imm_last == strlen(tsk.from)) {
-								*push_imm_last = strlen(tsk.to);
+								*push_imm_last = tsk.to.size();
 							}
 						}
 					}
@@ -398,7 +405,7 @@ void PatchZydisTask(unsigned char* base, char * sec_begin, char * sec_end, char 
 				
 			}
 
-			if (inst.length == 2 && *(fbase - 2) == 0x6A /* push 14h*/) {
+			if (inst.length == 2 && *(fbase - 2) == 0x6A /* push 14h, 0x6A是push的opcode*/) {
 				push_imm_last = fbase - 1;
 			}
 			else {
