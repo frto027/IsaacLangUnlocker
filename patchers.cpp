@@ -221,6 +221,22 @@ class IIDTrans : public Patcher {
 				}
 			}
 		}
+
+		unsigned char* movups_xmm0_spindown_dice = 0x83CFAE - IDA_BASE + patchContext.isaac_ng_base;
+		if (movups_xmm0_spindown_dice[0] == 0x0F && movups_xmm0_spindown_dice[1] == 0x10 && movups_xmm0_spindown_dice[2] == 0x05) {
+			const char** movups_xmm0_spindown_dice_str = (const char**) & movups_xmm0_spindown_dice[3];
+			if (strcmp(*movups_xmm0_spindown_dice_str, "<color=0xFF00FF00>Spins down into <collectible=") != 0) {
+				errs << L"spindowndice字符串没有找到（不符）\n";
+				hasErr = true;
+			}
+			else {
+				*movups_xmm0_spindown_dice_str = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
+			}
+		}
+		else {
+			errs << L"spindowndice字符串没有找到\n";
+			hasErr = true;
+		}
         if(prop_render_patched_count != prop_render_excepted_patch_count){
             hasErr = true;
             errs << L"函数Hook与预期不符，预期"<<prop_render_excepted_patch_count<<L"次，实际"<<prop_render_patched_count<<L"次";
@@ -229,11 +245,86 @@ class IIDTrans : public Patcher {
 			throw PatchException(errs.str());
 	}
 };
+
+class IIdLineWidthFix : public Patcher {
+public:
+	static void* FixGlyph(void* thiz, void* foo, void* bar, unsigned int* chr) {
+		static unsigned int unicode = 0;
+		static unsigned int remains_byte = 0;
+		if (*chr & 0x80) {
+			//this is ascii
+			unicode = 0;
+			remains_byte = 0;
+			return origFixGlyph(thiz, foo, bar, chr);
+		}
+		if (*chr & 0x80 &&!(*chr & 0x40)) {
+			//this is suffix
+			if (remains_byte) {
+				remains_byte--;
+				unicode = (unicode << 6) | (0x3F & *chr);
+				if (remains_byte == 0) {
+					return origFixGlyph(thiz, foo, bar,  &unicode);
+				}
+			}
+		}
+		if (*chr & 0x40 && !(*chr & 0x20)) {
+			unicode = 0x1F & *chr;
+			remains_byte = 1;
+			return origFixGlyph(thiz, foo, bar, chr); // will be not found
+		}
+		if (*chr & 0x20 &&!(*chr & 0x10)) {
+			unicode = 0xF & *chr;
+			remains_byte = 2;
+			return origFixGlyph(thiz, foo, bar, chr); // will be not found
+		}
+		if (*chr & 0x10 && !(*chr & 0x08)) {
+			unicode = 0x7 & *chr;
+			remains_byte = 3;
+			return origFixGlyph(thiz, foo, bar, chr); // will be not found
+		}
+
+		//not a utf8 code
+		unicode = 0;
+		remains_byte = 0;
+		return origFixGlyph(thiz, foo, bar, chr); // will be not found
+	}
+	static decltype(&FixGlyph) origFixGlyph;
+	void Patch() {
+		Name = L"内置图鉴排版修复";
+		//unsigned char* first_mov = 0x009E60E4 - 0x400000 + patchContext.isaac_ng_base;
+		//if (*first_mov != 0x8a) { // mov ax,
+		//	throw PatchException(L"找不到修改点1");
+		//}
+		//unsigned char* second_mov = 0x009E60F3 - 0x400000 + patchContext.isaac_ng_base;
+		//if (second_mov[0] != 0x0F || second_mov[1] != 0xBE || second_mov[2] != 0xC0) { // movsx, eax, al
+		//	throw PatchException(L"找不到修改点2");
+		//}
+
+		unsigned char* call_instr = 0x009E6109 - IDA_BASE + patchContext.isaac_ng_base;
+		if (call_instr[0] != 0xE8) {
+			throw PatchException(L"找不到call修改点");
+		}
+
+		//*first_mov = 0x8b; //mov eax,
+		//second_mov[0] = 0x90;//nop
+		//second_mov[1] = 0x90;
+		//second_mov[2] = 0x90;
+
+		//hook the call
+		int32_t* call_offset = (int32_t*)&call_instr[1];
+		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
+		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
+	}
+};
+decltype(&IIdLineWidthFix::FixGlyph) IIdLineWidthFix::origFixGlyph = nullptr;
+
+
 std::vector<Patcher*> patchers;
 
 void InitPatchers() {
 	patchers = {
 		new I18nUnlock(),
 		new IIDTrans(),
+		new IIdLineWidthFix(),
 	};
 }

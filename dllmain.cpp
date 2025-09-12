@@ -278,7 +278,7 @@ void Inject(bool i18nOnly = false) {
 	char* data_beg = nullptr, * data_end = nullptr, * rdata_beg = nullptr, * rdata_end = nullptr;
 
 
-	patchContext.isaac_ng_base = (char *)base;
+	patchContext.isaac_ng_base = base;
 	for (int i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++)
 	{
 		auto sec = &pSectionHdr[i];

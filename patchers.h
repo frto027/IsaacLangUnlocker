@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 struct PatchContext {
-	char* isaac_ng_base;
+	unsigned char* isaac_ng_base;
 	char* text_beg, * text_end, * data_beg, * data_end;
 };
 
