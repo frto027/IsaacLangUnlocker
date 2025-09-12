@@ -8,8 +8,10 @@
 #include "config.h"
 #include <stdlib.h>
 #include <vector>
-#include <Zydis/Zydis.h>
+#include "patchers.h"
+#include <sstream>
 
+extern Config config;
 Config config("fixlang.ini");
 
 bool hasClipboardInformation = 0;
@@ -164,126 +166,7 @@ HookedGetAsyncKeyState(
 	return GetAsyncKeyState(vKey);
 }
 
-/* 
-signature 描述：是已经打好补丁的signature，其中：
-0xcc：此处是偏移，不做匹配
-0x0D：此处原程序为0x00，打补丁后为0x0D（language ID）
-*/
-//更新点1 启用中文的二进制补丁
-unsigned char signature_ver2[140] =         "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\x8C\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x8C\xA6\x04\x00\x74\x0A\xC7\x86\x88\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xA4\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xA4\xA6\x04\x00\x74\x0A\xC7\x86\xA0\xA6\x04\x00\x0D\x00\x00\x00\xE8\xCC\xCC\xCC\xCC\x5E\x8B\xE5\x5D\xC2\x04\x00";
-unsigned char signature_ver3[128] =         "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\xB8\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xB8\xA6\x04\x00\x74\x0A\xC7\x86\xB4\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xD0\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xD0\xA6\x04\x00\x74\x0A\xC7\x86\xCC\xA6\x04\x00\x0D\x00\x00\x00";
-unsigned char signature_ver4[119] =                                             "\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\xDC\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xDC\xA6\x04\x00\x74\x0A\xC7\x86\xD8\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xF4\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xF4\xA6\x04\x00\x74\x0A\xC7\x86\xF0\xA6\x04\x00\x0D\x00\x00\x00";
-unsigned char signature_ver_1_9_7_10[76] =  "\xE4\xA6\x04\x00\x74\x0A\xC7\x86\xE0\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\xFC\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xFC\xA6\x04\x00\x74\x0A\xC7\x86\xF8\xA6\x04\x00\x0D\x00\x00\x00";
-unsigned char signature_ver_1_9_7_11[128] = "\x55\x8B\xEC\x83\xEC\x10\x56\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\x20\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x20\xA6\x04\x00\x74\x0A\xC7\x86\x1C\xA6\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\x38\xA6\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x38\xA6\x04\x00\x74\x0A\xC7\x86\x34\xA6\x04\x00\x0D\x00\x00\x00";
-unsigned char signature_ver_1_9_7_13[121] =                             "\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\x10\xA9\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x10\xA9\x04\x00\x74\x0A\xC7\x86\x0C\xA9\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\x28\xA9\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x28\xA9\x04\x00\x74\x0A\xC7\x86\x24\xA9\x04\x00\x0D\x00\x00\x00";
 
-#define USING_SIGNATURE signature_ver_1_9_7_13
-
-
-
-struct StringReplaceTask {
-	//uint32_t ptr;
-	char* from;
-	std::string to;
-	int expectedDoneTime;
-	int doneTime = 0;
-	ZydisMnemonic_ mnemonic = ZYDIS_MNEMONIC_INVALID;
-
-	StringReplaceTask(char* from, std::string to, int expected = 1, ZydisMnemonic_ mnemonic = ZYDIS_MNEMONIC_INVALID) :from(from), to(to), expectedDoneTime(expected), mnemonic(mnemonic){}
-};
-
-struct FunctionRange {
-	uint32_t base;
-	std::vector<StringReplaceTask> strReplaceTasks;
-};
-#define IDA_BASE 0x400000
-#define MOV_OP2(mov_addr) (mov_addr + 1 - IDA_BASE)
-#define MOVQ_XMM0_OP(mov_addr) (mov_addr + 4 - IDA_BASE)
-
-std::vector<StringReplaceTask> propRepTasks = {
-};
-
-std::vector<std::pair<const char*, std::string>> strmaps = {
-	{ " Speed", config.GetOrDefault("Trans", "speed", u8" 移速")},
-	{ " Tears", config.GetOrDefault("Trans", "tears", u8" 射速")},
-	{ " Damage",config.GetOrDefault("Trans", "damage", u8" 伤害")},
-	{ " Range", config.GetOrDefault("Trans", "range", u8" 射程")},
-	{ " Shot Speed", config.GetOrDefault("Trans","shotspeed", u8" 弹速")},
-	{ " Luck", config.GetOrDefault("Trans", "luck", u8" 幸运")},
-};
-// 更新点3 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
-#define IID_COLOR_FUNC_OFFSET (0x0084DA90 - IDA_BASE)
-
-struct ComplexStr {
-	char buff[16];
-	int len;
-	int cap;
-};
-
-int prop_render_patched_count = 0;
-int prop_render_excepted_patch_count = 12; // 这个变量是以iid_proprender为callee的call指令hook次数（预期），用于检测补丁过时
-void(__fastcall * orig_patched_iid_proprender)(char *a1, char* ptr, ComplexStr* ptr2);
-
-
-void __fastcall patched_iid_proprender(char* a1, char* ptr, ComplexStr* ptr2) {
-	//千万别碰xmm0寄存器，这里传了一个参数，透明过去！
-	for (auto it = strmaps.begin(), end = strmaps.end(); it != end; ++it) {
-		if (strncmp(ptr2->buff, it->first, ptr2->len) == 0 && ptr2->cap >= it->second.size())
-		{
-			strcpy(ptr2->buff, it->second.c_str());
-			ptr2->len = it->second.size();
-			break;
-		}
-	}
-	orig_patched_iid_proprender(a1, ptr, ptr2);
-}
-
-//更新点2 图鉴补丁
-std::vector<FunctionRange> strReplaceTasksFunc = {
-	{0x84F080 - IDA_BASE, {
-		{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器"			)		},//搜索empty red health
-		{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心"			)		},
-		{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心"	)		},
-		{"Heals ", 							config.GetOrDefault("Trans", "heals",					u8"治愈 "			)		},
-		{" red heart", 						config.GetOrDefault("Trans", "_red_heart",			 	u8" 红心"			)		},
-		{" soul heart", 					config.GetOrDefault("Trans", "_soul_heart",			 	u8" 魂心"			)		},
-		{" black heart", 					config.GetOrDefault("Trans", "_black_heart",			u8" 黑心"			)		},
-		{" bomb", 							config.GetOrDefault("Trans", "_bomb",				 	u8" 炸弹"			)		},
-		{" key", 							config.GetOrDefault("Trans", "_key",					u8" 钥匙"			)		},
-		{" coin", 							config.GetOrDefault("Trans", "_coin",				 	u8" 金币"			)		},
-		{"s", 								"", 6, ZYDIS_MNEMONIC_PUSH},
-	}},
-
-	//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
-	{0x84DD30 - IDA_BASE, propRepTasks },
-	{0x84E090 - IDA_BASE, propRepTasks },
-
-};
-
-bool sigmatch(unsigned char * signature, int size, void * pos) {
-	unsigned char* bts = (unsigned char*)pos;
-	for (int i = 0; i < size; i++) {
-		if (signature[i] == 13 && (bts[i] == 0 || bts[i] == 13)) {
-			continue;
-		}
-		if (signature[i] == 0xcc) {
-			continue;
-		}
-		if (signature[i] != bts[i])
-			return false;
-	}
-	return true;
-}
-
-void sigpatch(unsigned char * signature, int size, void* pos) {
-	unsigned char* bts = (unsigned char*)pos;
-	int langID = config.GetOrDefaultInt("option", "lang", 13);
-	for (int i = 0; i < size; i++) {
-		if (signature[i] == 13 && bts[i] == 0) {
-			bts[i] = langID;
-		}
-	}
-}
 #define CS_DONT_PATCH 0
 #define CS_PATCH 1
 int CheckSumForGameResources() {
@@ -350,74 +233,10 @@ int CheckSumForGameResources() {
 }
 #include <list>
 
-static const char* leakStr(const std::string& str) {
-	char* buff =(char*)malloc(str.size() + 1);
-	if (buff)
-		strcpy(buff, str.c_str());
-	return buff;
-}
 
-void PatchZydisTask(unsigned char* base, char * sec_begin, char * sec_end, char *rdata_sec_beg, char *rdata_sec_end) {
-	for (auto& func : strReplaceTasksFunc) {
-		char* fbase = (char*)(func.base + base);
-		if (fbase < sec_begin || fbase >= sec_end)
-			continue;
-
-		ZydisDecoder decoder;
-		ZydisDecodedInstruction inst;
-
-		ZydisDecoderContext ctx;
-		ZydisDecoderInit(&decoder, ZYDIS_MACHINE_MODE_LEGACY_32, ZYDIS_STACK_WIDTH_32);
-
-
-		char* push_imm_last = nullptr;
-
-		while (ZYAN_SUCCESS(ZydisDecoderDecodeInstruction(&decoder, &ctx, fbase, sec_end - fbase, &inst))) {
-			fbase += inst.length;
-			if (inst.mnemonic == ZYDIS_MNEMONIC_RET)
-				break;//done
-
-			if (inst.length >= 5) {
-				const char** strptr_maybe = (const char**)(fbase - 4);
-				if (rdata_sec_beg < *strptr_maybe && *strptr_maybe < rdata_sec_end) {
-					for (auto& tsk : func.strReplaceTasks) {
-						if (tsk.mnemonic != ZYDIS_MNEMONIC_INVALID && inst.mnemonic != tsk.mnemonic)
-							continue;
-						if (strcmp(tsk.from, *strptr_maybe) == 0) {
-							*strptr_maybe = leakStr(tsk.to);
-							tsk.doneTime++;
-							
-							if (push_imm_last && *push_imm_last == strlen(tsk.from)) {
-								*push_imm_last = tsk.to.size();
-							}
-						}
-					}
-				}
-			}
-
-			if (inst.length == 5 && inst.mnemonic == ZYDIS_MNEMONIC_CALL) {
-				//this is a call instruction
-				int32_t *offset = (int32_t*)(fbase - 4);
-				if ((int32_t)fbase + *offset == (int32_t)orig_patched_iid_proprender) {
-					*offset = ((int32_t)patched_iid_proprender) - (int32_t)fbase;
-					prop_render_patched_count++;
-				}
-				
-			}
-
-			if (inst.length == 2 && *(fbase - 2) == 0x6A /* push 14h, 0x6A是push的opcode*/) {
-				push_imm_last = fbase - 1;
-			}
-			else {
-				push_imm_last = nullptr;
-			}
-		}
-	}
-}
 
 
 void Inject(bool i18nOnly = false) {
-	int matched_count = 0;
 
 	std::map<void*, void*> replaceTask{
 		//{CreateWindowExA, HookedCreateWindowExA},
@@ -458,19 +277,28 @@ void Inject(bool i18nOnly = false) {
 	IMAGE_SECTION_HEADER* pSectionHdr = (IMAGE_SECTION_HEADER*)(pNtHdr + 1);
 	char* data_beg = nullptr, * data_end = nullptr, * rdata_beg = nullptr, * rdata_end = nullptr;
 
-	orig_patched_iid_proprender = (decltype(orig_patched_iid_proprender))(base + IID_COLOR_FUNC_OFFSET);
 
-	char* rdata_section_beg = nullptr, * rdata_section_end = nullptr;
+	patchContext.isaac_ng_base = (char *)base;
 	for (int i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++)
 	{
 		auto sec = &pSectionHdr[i];
 		char* name = (char*)sec->Name;
 
+		if (need_patch_cn && strcmp(".text", name) == 0) {
+			patchContext.text_beg = (char*)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
+			patchContext.text_end = (char*)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
+		}
 		if (strcmp(".rdata", name) == 0) {
-			rdata_section_beg = (char*)((unsigned int)base + (unsigned int)sec->VirtualAddress);
-			rdata_section_end = (char*)(((unsigned int)base + (unsigned int)sec->VirtualAddress + sec->SizeOfRawData) & ~3);
+			patchContext.data_beg = (char*)((unsigned int)base + (unsigned int)sec->VirtualAddress);
+			patchContext.data_end = (char*)(((unsigned int)base + (unsigned int)sec->VirtualAddress + sec->SizeOfRawData) & ~3);
 		}
 	}
+	InitPatchers();
+
+	int failedPatchers = 0;
+	int failedImportantPatchers = 0;
+	int succeedPatchers = 0;
+	std::wstringstream failedPatcherMessages;
 
 	for (int i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++)
 	{
@@ -482,18 +310,23 @@ void Inject(bool i18nOnly = false) {
 			char* sec_end = (char*)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
 			DWORD oldprotect;
 			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, PAGE_READWRITE, &oldprotect);
-			char* it = sec_begin;
-
-			while (it < sec_end) {
-				if (sigmatch(USING_SIGNATURE, sizeof(USING_SIGNATURE)-1, it)) {
-					sigpatch(USING_SIGNATURE, sizeof(USING_SIGNATURE)-1, it);
-					matched_count++;
-					break;//speed up, but less bug report
+			
+			for (auto& p : patchers) {
+				try {
+					p->Patch();
+					succeedPatchers++;
 				}
-				it++;
+				catch (PatchException e) {
+					if (p->isImportant) {
+						failedImportantPatchers++;
+						failedPatcherMessages << L"关键";
+					}
+					else {
+						failedPatchers++;
+					}
+					failedPatcherMessages << L"补丁“" << p->Name << "”失败：" << e.msg << L"\n";
+				}
 			}
-			PatchZydisTask(base, sec_begin, sec_end, rdata_section_beg, rdata_section_end);
-
 
 			VirtualProtect(sec_begin, pSectionHdr->SizeOfRawData, oldprotect, &oldprotect);
 		}
@@ -530,41 +363,20 @@ void Inject(bool i18nOnly = false) {
 	int funcStrReplacePassedCount = 0;
 	int funcStrReplaceExpectedCount = 0;
 	std::wstring funcStrReplaceFailedReport;
-	for (auto & rf : strReplaceTasksFunc) {
-		for (auto & tsk : rf.strReplaceTasks) {
-			funcStrReplaceExpectedCount++;
-			if (tsk.expectedDoneTime != tsk.doneTime) {
-				funcStrReplaceFailedReport += L"";
-				wchar_t buff[1024];
-				wsprintfW(buff, L"在函数0x%x中,补丁次数(%d/%d)，原始字符串为：", rf.base, tsk.doneTime, tsk.expectedDoneTime);
-				funcStrReplaceFailedReport += buff;
 
-				for (char* ch = tsk.from; *ch; ch++) {
-					funcStrReplaceFailedReport += *ch;
-				}
-				funcStrReplaceFailedReport += L"\n";
-			}
-			else {
-				funcStrReplacePassedCount++;
-			}
-		}
-	}
-
-	if (need_patch_cn && matched_count != 1) {
+	if (need_patch_cn && failedImportantPatchers != 0) {
 		wchar_t buff[1024];
-		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（共成功%d个，预期1个，另exe内文本%d/%d个，call补丁%d/%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。", matched_count, funcStrReplacePassedCount, funcStrReplaceExpectedCount, prop_render_patched_count, prop_render_excepted_patch_count);
-		MessageBoxW(NULL, buff, L"中文补丁报告", 0);
+		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
+			succeedPatchers, failedImportantPatchers, failedPatchers);
+		auto errmsg = buff + failedPatcherMessages.str();
+		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁错误报告", 0);
 	}
-	else if(need_patch_cn && (funcStrReplacePassedCount != funcStrReplaceExpectedCount || prop_render_patched_count != prop_render_excepted_patch_count) ){
-		wchar_t buff[2048];
-		wsprintfW(buff, L"中文加载部分失败。\nexe内文本补丁成功%d/%d个，可能需要更新中文补丁。失败内容为：\n", funcStrReplacePassedCount, funcStrReplaceExpectedCount);
-		std::wstring failed_report = buff + funcStrReplaceFailedReport;
-
-		if (prop_render_patched_count != prop_render_excepted_patch_count) {
-			wsprintfW(buff, L"call补丁%d/%d个", prop_render_patched_count, prop_render_excepted_patch_count);
-			failed_report += buff;
-		}
-		MessageBoxW(NULL, failed_report.c_str(), L"中文补丁报告", 0);
+	else if(need_patch_cn && (failedPatchers != 0) ){
+		wchar_t buff[1024];
+		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
+			succeedPatchers, failedPatchers);
+		auto errmsg = buff + failedPatcherMessages.str();
+		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁报告", 0);
 	}
 
 }

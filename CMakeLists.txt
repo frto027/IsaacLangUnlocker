@@ -10,6 +10,7 @@ add_library(userenv SHARED
     dllmain.cpp
     Injector.cpp
     stdafx.cpp
+    patchers.cpp
 )
 target_link_libraries(userenv
     dbghelp.lib Winmm.lib Zydis
