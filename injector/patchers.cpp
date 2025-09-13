@@ -109,7 +109,7 @@ class IIDTrans : public Patcher {
 
 	//更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
-		{0x84F080 - IDA_BASE, {
+		{0x084FC80 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
 			{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心")		},
 			{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心")		},
@@ -124,8 +124,8 @@ class IIDTrans : public Patcher {
 		}},
 
 		//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
-		{0x84DD30 - IDA_BASE },
-		{0x84E090 - IDA_BASE },
+		{0x084E390 - IDA_BASE },
+		{0x084E6F0 - IDA_BASE },
 
 	};
 	static const char* leakStr(const std::string& str) {
@@ -222,7 +222,7 @@ class IIDTrans : public Patcher {
 			}
 		}
 
-		unsigned char* movups_xmm0_spindown_dice = 0x83CFAE - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* movups_xmm0_spindown_dice = 0x0083D50B - IDA_BASE + patchContext.isaac_ng_base;
 		if (movups_xmm0_spindown_dice[0] == 0x0F && movups_xmm0_spindown_dice[1] == 0x10 && movups_xmm0_spindown_dice[2] == 0x05) {
 			const char** movups_xmm0_spindown_dice_str = (const char**) & movups_xmm0_spindown_dice[3];
 			if (strcmp(*movups_xmm0_spindown_dice_str, "<color=0xFF00FF00>Spins down into <collectible=") != 0) {
@@ -348,7 +348,7 @@ public:
 		//	throw PatchException(L"找不到修改点2");
 		//}
 
-		unsigned char* call_instr = 0x009E6109 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* call_instr = 0x009E6C09 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(L"找不到call修改点");
 		}
@@ -363,7 +363,7 @@ public:
 		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
 		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
 
-		unsigned char* cmp_linebreak = 0x9E69FF - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
 		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
 			throw PatchException(L"无法补丁cmp指令");
 		}
