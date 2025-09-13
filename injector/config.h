@@ -7,7 +7,7 @@
 class Config {
 public:
 	std::map<std::string, std::map<std::string, std::string> > records;
-	Config(const char* path) {
+	void Load(const wchar_t* path) {
 		std::string section = "default";
 
 		std::ifstream file(path);

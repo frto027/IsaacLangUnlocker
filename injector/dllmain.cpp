@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+﻿#include <windows.h>
 #include "Injector.h"
 #include <DbgHelp.h>
 #include <stdio.h>
@@ -10,9 +10,50 @@
 #include <vector>
 #include "patchers.h"
 #include <sstream>
+#include <Shlwapi.h>
+#include <optional>
 
 extern Config config;
-Config config("fixlang.ini");
+Config config;
+
+namespace MCM_CONFIG {
+	bool custom_revive = true;
+	bool custom_emoji = true;
+	bool fix_input = true;
+
+	bool has_config = false;
+
+	void Load() {
+		const wchar_t* p = L"data\\mod_config_menu_cn\\save1.dat";
+		if (PathFileExistsW(p)) {
+			FILE* f = _wfopen(p, L"r");
+			if (!f) return;
+			char buff[4096];
+			auto e = fread_s(buff, 4095, 1, 4095, f);
+			buff[e] = 0;
+
+			for (int i = 0; i + 4 < e; i++) {
+				if (strncmp(&buff[i], "cnc", 3) == 0) {
+					char key = buff[i+3];
+					char val = buff[i+4];
+
+					if (key == 'r') {
+						custom_revive = val == '1';
+					}
+					if (key == 'e') {
+						custom_emoji = val == '1';
+					}
+					if (key == 'f')
+						fix_input = val == '1';
+				}
+			}
+			has_config = true;
+
+			fclose(f);
+		}
+	}
+}
+
 
 bool hasClipboardInformation = 0;
 DWORD lastClipboardInformation = 0;
@@ -236,7 +277,7 @@ int CheckSumForGameResources() {
 
 
 
-void Inject(bool i18nOnly = false) {
+void Inject() {
 
 	std::map<void*, void*> replaceTask{
 		//{CreateWindowExA, HookedCreateWindowExA},
@@ -268,9 +309,8 @@ void Inject(bool i18nOnly = false) {
 
 	if (config.GetOrDefault("option", "fixinput", "0") == "1")
 		FIX_INPUT = true;
-
-	if (i18nOnly)
-		FIX_INPUT = false;
+	if (MCM_CONFIG::has_config)
+		FIX_INPUT = MCM_CONFIG::fix_input;
 
 	unsigned char* base = (unsigned char*)GetModuleHandleA(NULL);
 	IMAGE_NT_HEADERS* pNtHdr = ImageNtHeader(base);
@@ -381,74 +421,105 @@ void Inject(bool i18nOnly = false) {
 
 }
 
+namespace FileCopy {
+	bool AssertFileExist(std::wstring f) {
+		if (!PathFileExistsW(f.c_str())) {
+			auto err = L"文件不存在" + f;
+			MessageBoxW(NULL, L"中文模组加载器报错", err.c_str(), MB_ICONERROR);
+			return false;
+		}
+		return true;
+	}
 
-HMODULE h = NULL;
+	bool file_equal(std::wstring a, std::wstring b) {
+		if (!PathFileExistsW(a.c_str()))
+			return false;
+		std::ifstream ia(a, std::ios_base::binary | std::ios::in), ib(b, std::ios_base::binary | std::ios::in);
+		while (!ia.eof() && !ib.eof()) {
+			if (ia.get() != ib.get())
+				return false;
+		}
+		if (ia.eof() != ib.eof())
+			return false;
+		return true;
+	}
 
-BOOL
-(WINAPI *OriginalGetUserProfileDirectoryA)(
-	_In_                            HANDLE  hToken,
-	_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
-	_Inout_                         LPDWORD lpcchSize);
-BOOL
-(WINAPI*OriginalGetUserProfileDirectoryW)(
-	_In_                            HANDLE  hToken,
-	_Out_writes_opt_(*lpcchSize)    LPWSTR lpProfileDir,
-	_Inout_                         LPDWORD lpcchSize);
+	bool updated = false;
+	std::wstringstream us;
+	bool CopyFileFromTo(std::wstring from, std::wstring to) {
+		if (!AssertFileExist(from))
+			return false;
+		if (!file_equal(from, to)) {
+			FILE* in, * out;
+			in = _wfopen(from.c_str(), L"rb");
+			out = _wfopen(to.c_str(), L"wb");
+
+			if (in && out) {
+				char buff[1024];
+				while (!feof(in)) {
+					auto sz = fread(buff, 1, 1024, in);
+					fwrite(buff, 1, 1024, out);
+				}
+			}
+			if (in) fclose(in);
+			if (out) fclose(out);
+			us << L"文件:" << to << L"已更新\n";
+			updated = true;
+		}
+		return true;
+	}
+
+	void InstallModFiles(std::wstring mod) {
+		CopyFileFromTo(mod + L"repentance_zh.a", L".\\resources\\packed\\repentance_zh.a");
+
+		if (MCM_CONFIG::custom_emoji) {
+			CopyFileFromTo(mod + L"repentance_de.a", L".\\resources\\packed\\repentance_de.a");
+		}
+		else {
+			unlink(".\\resources\\packed\\repentance_de.a");
+		}
+		if (MCM_CONFIG::custom_revive) {
+			CopyFileFromTo(mod + L"repentance_de.a", L".\\resources\\packed\\repentance_es.a");
+		}
+		else {
+			unlink(".\\resources\\packed\\repentance_es.a");
+		}
+
+		if (updated) {
+			std::wstring hint = L"已应用中文补丁的配置更新：\n";
+			hint += us.str();
+			MessageBoxW(NULL, hint.c_str(), L"中文补丁配置已更新", MB_ICONINFORMATION);
+		}
+	}
+}
+
+extern "C" {
+	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
+		MCM_CONFIG::Load();
+
+		std::wstring cfg = modfolder_root;
+		cfg += L"fixlang.ini";
+		config.Load(cfg.c_str());
+		FileCopy::InstallModFiles(modfolder_root);
+		Inject();
+	}
+}
+
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
 					 )
 {
-	static bool isLoaded = false;
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		if (isLoaded)return FALSE; isLoaded = true;
-		OriginalGetUserProfileDirectoryA = NULL;
-		{
-			h = LoadLibraryA("C:\\Windows\\System32\\userenv.dll");
-			if (h == NULL)
-				h = LoadLibraryA("C:\\Windows\\SysWOW64\\userenv.dll");
-			if (h == NULL) {
-				Inject(true);
-				break;
-			}
-			
-			OriginalGetUserProfileDirectoryA = (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(h, "GetUserProfileDirectoryA");
-			OriginalGetUserProfileDirectoryW = (decltype(OriginalGetUserProfileDirectoryW))GetProcAddress(h, "GetUserProfileDirectoryW");
-			Inject(false);
-		}
-		//load self to prevent use after free if the game called FreeLibrary later
-		wchar_t filename[1024];
-		if (GetModuleFileNameW(hModule, filename, sizeof(filename)/sizeof(*filename))) {
-			HMODULE ret = LoadLibraryW(filename);
-			if (ret) {
-				//pass
-			}
-			else {
-				MessageBoxW(NULL, L"二进制补丁保活失效，补丁未能获取到正确的自身路径并进行自加载", L"中文补丁报告", 0);
-			}
-		}
-		else {
-			if (GetFileAttributesW(L"userdna.dll") != INVALID_FILE_ATTRIBUTES) {
-				LoadLibrary("userdna.dll");
-			}
-			else {
-				LoadLibrary("userenv.dll");
-			}
-		}
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
 	case DLL_THREAD_DETACH:
 		break;
 	case DLL_PROCESS_DETACH:
-		if (h) {
-			OriginalGetUserProfileDirectoryA = NULL;
-			FreeLibrary(h);
-			h = NULL;
-		}
 		break;
 	}
 	return TRUE;

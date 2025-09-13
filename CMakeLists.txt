@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
+
+
 project(Injector)
 
 option(ZYDIS_BUILD_TOOLS "" OFF)
@@ -6,15 +8,19 @@ option(ZYDIS_BUILD_EXAMPLES "" OFF)
 add_subdirectory("zydis")
 
 
-add_library(userenv SHARED
-    dllmain.cpp
-    Injector.cpp
-    stdafx.cpp
-    patchers.cpp
+add_library(inject SHARED
+    injector/dllmain.cpp
+    injector/patchers.cpp
 )
-target_link_libraries(userenv
-    dbghelp.lib Winmm.lib Zydis
+target_link_libraries(inject
+    dbghelp.lib Winmm.lib Shlwapi.lib Zydis
 )
-target_link_options(
-    userenv PRIVATE /DEF:${PROJECT_SOURCE_DIR}/Source.def
+
+project(Loader)
+
+add_library(dsound SHARED
+    loader/main.cpp
+)
+target_link_libraries(dsound
+    Shlwapi.lib
 )
