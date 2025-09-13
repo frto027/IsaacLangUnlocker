@@ -311,6 +311,10 @@ void Inject() {
 		FIX_INPUT = true;
 	if (MCM_CONFIG::has_config)
 		FIX_INPUT = MCM_CONFIG::fix_input;
+	if (config.GetOrDefault("option", "fixinput", "0") == "-1") {
+		FIX_INPUT = false;
+	}
+
 
 	unsigned char* base = (unsigned char*)GetModuleHandleA(NULL);
 	IMAGE_NT_HEADERS* pNtHdr = ImageNtHeader(base);
@@ -498,8 +502,39 @@ extern "C" {
 		MCM_CONFIG::Load();
 
 		std::wstring cfg = modfolder_root;
-		cfg += L"fixlang.ini";
+		cfg += L"config.ini";
 		config.Load(cfg.c_str());
+
+		int ng_checksum = config.GetOrDefaultInt("isaac", "check");
+		if (ng_checksum != -1 && PathFileExists("isaac-ng.exe")) {
+			int game_hash = 0;
+			FILE* f = fopen("isaac-ng.exe", "rb");
+			if (f) {
+				int tmp = 0;
+				while (true) {
+					if (fread(&tmp, sizeof(tmp), 1, f) == 1) {
+						game_hash ^= tmp;
+					}
+					else {
+						break;
+					}
+				}
+				fclose(f);
+				game_hash &= ~0x80000000;
+
+				if (ng_checksum != game_hash) {
+					std::wstring output = L"游戏哈希";
+					output += game_hash;
+					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
+						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。"
+						;
+					if (IDNO == MessageBoxW(NULL, output.c_str(), L"中文补丁不匹配提示", MB_ICONINFORMATION | MB_YESNO))
+						return;
+				}
+			}
+		}
+
+
 		FileCopy::InstallModFiles(modfolder_root);
 		Inject();
 	}
