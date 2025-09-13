@@ -245,50 +245,98 @@ class IIDTrans : public Patcher {
 			throw PatchException(errs.str());
 	}
 };
+struct FixGlyphRetNode
+{
+	int unk1, unk2, unk3, found_bool, key, value;
+};
+struct FixGlyphRetP {
+	int unk, unk2;
+	FixGlyphRetNode* node;
+	int unk4;
+};
+
+struct FntGlyphData {
+	int a1;
+	int16_t s21, s22, s31, s32, s41, s42;
+	int16_t w, h;
+};
+
+struct GameFnt {
+	FntGlyphData *datas;
+};
+
+int iid_line_fix_can_break = 0;
+__declspec(naked)  void IIdLineFixReturn() {
+	__asm {
+		cmp byte ptr[ecx + eax - 1], 020h
+		jne fallback
+		ret;原始情况，前面是空格可以换行
+		fallback:
+		cmp iid_line_fix_can_break, 01h
+		ret
+	}
+}
 
 class IIdLineWidthFix : public Patcher {
 public:
-	static void* FixGlyph(void* thiz, void* foo, void* bar, unsigned int* chr) {
-		static unsigned int unicode = 0;
+	static FixGlyphRetP* __fastcall FixGlyph(void* thiz, void* foo, FixGlyphRetP* bar, unsigned int* chr) {
+		FixGlyphRetP* ret = nullptr;
+
+		static FixGlyphRetNode NotFoundNode;
+
+		GameFnt* font = (GameFnt*)(((uint32_t)thiz) - 88 + 64);
+
+ 		static unsigned int unicode = 0;
 		static unsigned int remains_byte = 0;
-		if (*chr & 0x80) {
+
+		iid_line_fix_can_break = 0;
+		if (!(*chr & 0x80)) {
 			//this is ascii
 			unicode = 0;
 			remains_byte = 0;
-			return origFixGlyph(thiz, foo, bar, chr);
-		}
-		if (*chr & 0x80 &&!(*chr & 0x40)) {
+			ret = origFixGlyph(thiz, foo, bar, chr);
+		}else if (!(*chr & 0x40)) {
 			//this is suffix
 			if (remains_byte) {
 				remains_byte--;
 				unicode = (unicode << 6) | (0x3F & *chr);
 				if (remains_byte == 0) {
-					return origFixGlyph(thiz, foo, bar,  &unicode);
+					ret = origFixGlyph(thiz, foo, bar,  &unicode);
+					if (unicode == 0xff0c /*，*/ || unicode == 0x3002 /*。*/ || unicode == 0xff01 /*！*/)
+						;
+					else
+						iid_line_fix_can_break = 1;
 				}
 			}
-		}
-		if (*chr & 0x40 && !(*chr & 0x20)) {
+		}else if (!(*chr & 0x20)) {
 			unicode = 0x1F & *chr;
 			remains_byte = 1;
-			return origFixGlyph(thiz, foo, bar, chr); // will be not found
-		}
-		if (*chr & 0x20 &&!(*chr & 0x10)) {
+		}else if (!(*chr & 0x10)) {
 			unicode = 0xF & *chr;
 			remains_byte = 2;
-			return origFixGlyph(thiz, foo, bar, chr); // will be not found
-		}
-		if (*chr & 0x10 && !(*chr & 0x08)) {
+		}else if (!(*chr & 0x08)) {
 			unicode = 0x7 & *chr;
 			remains_byte = 3;
-			return origFixGlyph(thiz, foo, bar, chr); // will be not found
+		}
+		else {
+			//not a utf8 code
+			unicode = 0;
+			remains_byte = 0;
 		}
 
-		//not a utf8 code
-		unicode = 0;
-		remains_byte = 0;
-		return origFixGlyph(thiz, foo, bar, chr); // will be not found
+		if (ret == nullptr) {
+			ret = origFixGlyph(thiz, foo, bar, chr); // will be not found
+		}else if (ret->node->found_bool) {
+			//auto data = font->datas[ret->node->value];
+			//unicode = 0;
+		}
+
+		return ret;
 	}
 	static decltype(&FixGlyph) origFixGlyph;
+
+
+
 	void Patch() {
 		Name = L"内置图鉴排版修复";
 		//unsigned char* first_mov = 0x009E60E4 - 0x400000 + patchContext.isaac_ng_base;
@@ -314,6 +362,14 @@ public:
 		int32_t* call_offset = (int32_t*)&call_instr[1];
 		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
 		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
+
+		unsigned char* cmp_linebreak = 0x9E69FF - IDA_BASE + patchContext.isaac_ng_base;
+		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
+			throw PatchException(L"无法补丁cmp指令");
+		}
+		cmp_linebreak[0] = 0xE8; //call
+		int* offset = (int*)&cmp_linebreak[1];
+		*offset = ((uint32_t)&IIdLineFixReturn) - (int32_t)cmp_linebreak - 5;
 	}
 };
 decltype(&IIdLineWidthFix::FixGlyph) IIdLineWidthFix::origFixGlyph = nullptr;

@@ -324,7 +324,7 @@ void Inject(bool i18nOnly = false) {
 					else {
 						failedPatchers++;
 					}
-					failedPatcherMessages << L"补丁“" << p->Name << "”失败：" << e.msg << L"\n";
+					failedPatcherMessages << L"补丁“" << p->Name << L"”失败：" << e.msg << L"\n";
 				}
 			}
 
@@ -369,14 +369,14 @@ void Inject(bool i18nOnly = false) {
 		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
 			succeedPatchers, failedImportantPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁错误报告", 0);
+		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁加载失败", MB_ICONERROR);
 	}
 	else if(need_patch_cn && (failedPatchers != 0) ){
 		wchar_t buff[1024];
-		wsprintfW(buff, L"中文加载失败。\n函数签名没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
+		wsprintfW(buff, L"游戏可以继续，但一部分中文不会显示。\n函数签名没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
 			succeedPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁报告", 0);
+		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁部分加载失败", MB_ICONINFORMATION);
 	}
 
 }
