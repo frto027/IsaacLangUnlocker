@@ -523,11 +523,13 @@ extern "C" {
 				game_hash &= ~0x80000000;
 
 				if (ng_checksum != game_hash) {
-					std::wstring output = L"游戏哈希";
+					std::wstring output = L"游戏主程序哈希";
 					output += game_hash;
 					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
-						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。"
-						;
+						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
+						L"\n在配置文件" + cfg + L"中删除check=";
+					output += ng_checksum;
+					output += L"行可在下次mod更新之前跳过此提示";
 					if (IDNO == MessageBoxW(NULL, output.c_str(), L"中文补丁不匹配提示", MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}
