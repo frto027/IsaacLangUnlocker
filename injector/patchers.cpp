@@ -348,6 +348,7 @@ public:
 		//	throw PatchException(L"找不到修改点2");
 		//}
 
+		// GetCharacterWidth 最后一个引用偏移大于300h的函数
 		unsigned char* call_instr = 0x009E6C09 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(L"找不到call修改点");
@@ -363,6 +364,7 @@ public:
 		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
 		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
 
+		//cmp     byte ptr [ecx+eax-1], 20h 
 		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
 		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
 			throw PatchException(L"无法补丁cmp指令");
