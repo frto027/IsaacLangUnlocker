@@ -97,6 +97,32 @@ bool TryLoad(std::wstring mod_folder) {
 	return true;
 }
 
+BOOL
+WINAPI
+GetUserProfileDirectoryA(
+	_In_                            HANDLE  hToken,
+	_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
+	_Inout_                         LPDWORD lpcchSize) {
+
+	auto lib = LoadLibraryA("userenv");
+
+	BOOL
+	(WINAPI *OriginalGetUserProfileDirectoryA)(
+		_In_                            HANDLE  hToken,
+		_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
+		_Inout_                         LPDWORD lpcchSize)
+		= (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(lib, "GetUserProfileDirectoryA");
+	
+	BOOL ret = false;
+	if(OriginalGetUserProfileDirectoryA){
+		ret = OriginalGetUserProfileDirectoryA(hToken, lpProfileDir, lpcchSize);
+		return ret;
+	}
+
+	MessageBoxW(NULL, L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？", L"中文补丁错误", MB_ICONERROR);
+	return false;
+}
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
