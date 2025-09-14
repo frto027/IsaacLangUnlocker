@@ -585,8 +585,9 @@ extern "C" {
 			}
 		}
 
-
-		FileCopy::InstallModFiles(modfolder_root);
+		if (config.GetOrDefault("option", "skipcopy", "0") == "0") {
+			FileCopy::InstallModFiles(modfolder_root);
+		}
 		Inject();
 	}
 }
