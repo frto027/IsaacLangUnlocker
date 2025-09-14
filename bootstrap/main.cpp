@@ -1,149 +1,63 @@
-﻿#include <windows.h>
-#include <fstream>
-#include <Shlwapi.h>
-#include <sstream>
-
-/*
-
-dsound.dll需要用户自行替换，不进行自动更新。所以不要在这里增加功能。
-
-*/
+﻿local MCMLoaded, MCM = pcall(require, "scripts.modconfig")
 
 
-bool AssertFileExist(std::wstring f) {
-	if (!PathFileExistsW(f.c_str())){
-		auto err = L"文件不存在" + f;
-		MessageBoxW(NULL,  err.c_str(), L"中文模组加载器报错", MB_ICONERROR);
-		return false;
-	}
-	return true;
-}
 
-bool file_equal(std::wstring a, std::wstring b){
-	if (!PathFileExistsW(a.c_str()))
-		return false;
-	std::ifstream ia(a, std::ios_base::binary | std::ios::in), ib(b, std::ios_base::binary | std::ios::in);
-	while (!ia.eof() && !ib.eof()) {
-		if (ia.get() != ib.get())
-			return false;
-	}
-	if (ia.eof() != ib.eof())
-		return false;
-	return true;
-}
+if MCMLoaded and MCM then
+    local mod = RegisterMod("ChineseRepp",1)
 
-bool updated = false;
-bool CopyFileFromTo(std::wstring from, std::wstring to) { 
-	if (!AssertFileExist(from))
-		return false;
-	if (!file_equal(from, to)) {
-		// 设计考量：考虑到动态加载外部代码带来的风险，此处引入一步用户交互。
-		std::wstring q = L"即将应用来自以下文件的动态代码更新，是否继续？\n";
-		q += from;
-		if (MessageBoxW(NULL, q.c_str(), L"中文补丁更新询问", MB_YESNO | MB_ICONQUESTION) != IDYES) {
-			MessageBoxW(NULL, L"更新已取消", L"中文补丁更新询问", MB_ICONINFORMATION);
-			return true;
-		}
+    local json = require("json")
 
-		FILE* in, * out;
-		in = _wfopen(from.c_str(), L"rb");
-		out = _wfopen(to.c_str(), L"wb");
+    local cn = MCM.i18n == "Chinese"
 
-		if (in && out) {
-			char buff[1024];
-			while (!feof(in)) {
-				auto sz = fread(buff, 1, 1024, in);
-				fwrite(buff, 1, sz, out);
-			}
-		}
-		if (in) fclose(in);
-		if (out) fclose(out);
-		updated = true;
-	}
-	return true;
-}
+    local cfg = {
+        fix_input = true,
+        revive = true,
+        emoji = true
+    }
 
-// return true means stop future load.
-// when error happens, return true.
-bool TryLoad(std::wstring mod_folder) {
-	if (!PathFileExistsW(mod_folder.c_str())) {
-		return false;
-	}
+    local data_str = Isaac.LoadModData(mod)
+    if data_str and data_str ~= "" then
+        cfg = json.decode(data_str)
+    end
 
-	bool updated = false;
+    local function save()
+        cfg.hint = "cncf" .. (cfg.fix_input and "1" or "0") .. 
+            "cncr" .. (cfg.revive and "1" or "0") ..
+            "cnce" .. (cfg.emoji and "1" or "0")
+        Isaac.SaveModData(mod, json.encode(cfg))
+    end
 
-	// 我们将模组目录下的loader.bin拷贝至游戏目录的cm_tmp.dll并加载，以避免出现文件锁，使得游戏无法更新mod。
-	
-	const wchar_t* tmp = L".\\inject.dll";
-	auto mod_dll = mod_folder + L"inject.bin";
-	if (!CopyFileFromTo(mod_folder + L"inject.bin", tmp))
-		return true;
+    MCM.AddText(cn and "中文补丁" or "ReppCN", cn and "以下内容将在重启后生效" or "The following setthings need restart game.")
+    MCM.AddText(cn and "中文补丁" or "ReppCN", cn and "" or "")
 
-	if (updated) {
-		MessageBoxW(NULL, L"中文模组加载工具已更新", L"中文模组报告", MB_OK);
-	}
+    MCM.AddSetting(cn and "中文补丁" or "ReppCN", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function() return cfg.fix_input end,
+        Display = cn    and function() return "输入法修正:" .. (cfg.fix_input and "开" or "关") end
+                        or  function() return "fix input:" .. (cfg.fix_input and "on" or "off") end,
+        OnChange = function(b) cfg.fix_input = b save() end,
+        Info =cn    and {"修复中文输入法。"}
+                    or  {"Chinese input fix."}
+    })
 
-	HMODULE m = LoadLibraryW(tmp);
-	if (!m) {
-		MessageBoxW(NULL, L"中文补丁程序inject.dll无法载入", L"中文模组加载失败", MB_ICONERROR);
-		return true;
-	}
+    MCM.AddSetting(cn and "中文补丁" or "ReppCN", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function() return cfg.revive end,
+        Display = cn    and function() return "重绘的复活机贴图:" .. (cfg.revive and "开" or "关") end
+                        or  function() return "reveive:" .. (cfg.revive and "on" or "off") end,
+        OnChange = function(b) cfg.revive = b save() end,
+        Info =cn    and {"替换复活机。"}
+                    or  {"revive mach rep."}
+    })    
+    
+    MCM.AddSetting(cn and "中文补丁" or "ReppCN", {
+        Type = ModConfigMenu.OptionType.BOOLEAN,
+        CurrentSetting = function() return cfg.emoji end,
+        Display = cn    and function() return "重绘的联机表情:" .. (cfg.emoji and "开" or "关") end
+                        or  function() return "emote:" .. (cfg.emoji and "on" or "off") end,
+        OnChange = function(b) cfg.emoji = b save() end,
+        Info =cn    and {"替换表情。"}
+                    or  {"emoji replace."}
+    })
 
-	auto inject = GetProcAddress(m, "Load");
-	if (!inject) {
-		MessageBoxW(NULL, L"中文补丁程序inject.dll无法载入，找不到Load函数", L"中文模组加载失败", MB_ICONERROR);
-		return true;
-	}
-	((void(*)(const wchar_t*))inject)(mod_folder.c_str());
-	return true;
-}
-
-BOOL
-WINAPI
-GetUserProfileDirectoryA(
-	_In_                            HANDLE  hToken,
-	_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
-	_Inout_                         LPDWORD lpcchSize) {
-
-	auto lib = LoadLibraryA("userenv");
-
-	BOOL
-	(WINAPI *OriginalGetUserProfileDirectoryA)(
-		_In_                            HANDLE  hToken,
-		_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
-		_Inout_                         LPDWORD lpcchSize)
-		= (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(lib, "GetUserProfileDirectoryA");
-	
-	BOOL ret = false;
-	if(OriginalGetUserProfileDirectoryA){
-		ret = OriginalGetUserProfileDirectoryA(hToken, lpProfileDir, lpcchSize);
-		return ret;
-	}
-
-	MessageBoxW(NULL, L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？", L"中文补丁错误", MB_ICONERROR);
-	return false;
-}
-
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-					 )
-{
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		if (TryLoad(L".\\mods\\cn_repp\\"))
-			break;
-		if (TryLoad(L".\\mods\\cn_repp_1\\"))
-			break;
-		break;
-	case DLL_THREAD_ATTACH:
-		break;
-	case DLL_THREAD_DETACH:
-		break;
-	case DLL_PROCESS_DETACH:
-		break;
-	}
-	return TRUE;
-}
-
+end

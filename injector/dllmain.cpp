@@ -24,7 +24,11 @@ namespace MCM_CONFIG {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = L"data\\mod_config_menu_cn\\save1.dat";
+		const wchar_t* p = L"data\\cn_rep+\\save1.dat";
+		if (!PathFileExistsW(p))
+			p = L"data\\cn_rep+\\save2.dat";
+		if (!PathFileExistsW(p))
+			p = L"data\\cn_rep+\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -484,7 +488,7 @@ namespace FileCopy {
 
 	bool updated = false;
 	std::wstringstream us;
-	bool CopyFileFromTo(std::wstring from, std::wstring to) {
+	bool CopyFileFromTo(std::wstring from, std::wstring to, std::wstring hint_prefix = L"") {
 		if (!AssertFileExist(from))
 			return false;
 		if (!file_equal(from, to)) {
@@ -501,26 +505,34 @@ namespace FileCopy {
 			}
 			if (in) fclose(in);
 			if (out) fclose(out);
-			us << L"文件:" << to << L"已更新\n";
+			us << hint_prefix << L"文件:" << to << L"已更新\n";
 			updated = true;
 		}
 		return true;
 	}
 
 	void InstallModFiles(std::wstring mod) {
-		CopyFileFromTo(mod + L"repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
+		CopyFileFromTo(mod + L"res\\repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
 
 		if (MCM_CONFIG::custom_emoji) {
-			CopyFileFromTo(mod + L"repentance_emote.a.copy", L".\\resources\\packed\\repentance_de.a");
+			CopyFileFromTo(mod + L"res\\repentance_emote.a.copy", L".\\resources\\packed\\repentance_de.a", L"联机表情资源");
 		}
 		else {
-			unlink(".\\resources\\packed\\repentance_de.a");
+			if (PathFileExistsW(L".\\resources\\packed\\repentance_de.a")) {
+				unlink(".\\resources\\packed\\repentance_de.a");
+				updated = true;
+				us << L"表情文件已移除\n";
+			}
 		}
 		if (MCM_CONFIG::custom_revive) {
-			CopyFileFromTo(mod + L"repentance_reveive.a.copy", L".\\resources\\packed\\repentance_es.a");
+			CopyFileFromTo(mod + L"res\\repentance_reveive.a.copy", L".\\resources\\packed\\repentance_es.a", L"复活机贴图");
 		}
 		else {
-			unlink(".\\resources\\packed\\repentance_es.a");
+			if (PathFileExistsW(L".\\resources\\packed\\repentance_es.a")) {
+				unlink(".\\resources\\packed\\repentance_es.a");
+				updated = true;
+				us << L"复活机文件已移除\n";
+			}
 		}
 
 		if (updated) {
@@ -536,7 +548,7 @@ extern "C" {
 		MCM_CONFIG::Load();
 
 		std::wstring cfg = modfolder_root;
-		cfg += L"config.ini";
+		cfg += L"res\\config.ini";
 		config.Load(cfg.c_str());
 
 		int ng_checksum = config.GetOrDefaultInt("isaac", "check");

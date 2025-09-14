@@ -3,20 +3,20 @@ local MCMLoaded, MCM = pcall(require, "scripts.modconfig")
 
 
 if MCMLoaded and MCM then
-    local mod = RegisterMod("ChineseRepp")
+    local mod = RegisterMod("ChineseRepp",1)
 
     local json = require("json")
 
     local cn = MCM.i18n == "Chinese"
 
     local cfg = {
-        fix_input = false,
+        fix_input = true,
         revive = true,
         emoji = true
     }
 
     local data_str = Isaac.LoadModData(mod)
-    if data_str then
+    if data_str and data_str ~= "" then
         cfg = json.decode(data_str)
     end
 
@@ -32,8 +32,8 @@ if MCMLoaded and MCM then
     MCM.AddSetting(cn and "官中+" or "ReppCN", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function() return cfg.fix_input end,
-        Display = cn    and function() "输入法修复:" .. (cfg.fix_input and "开" or "关") end
-                        or  function() "fix input:" .. (cfg.fix_input and "on" or "off") end,
+        Display = cn    and function() return "输入法修复:" .. (cfg.fix_input and "开" or "关") end
+                        or  function() return "fix input:" .. (cfg.fix_input and "on" or "off") end,
         OnChange = function(b) cfg.fix_input = b save() end,
         Info =cn    and {"修复中文输入法。"}
                     or  {"Chinese input fix."}
@@ -42,8 +42,8 @@ if MCMLoaded and MCM then
     MCM.AddSetting(cn and "官中+" or "ReppCN", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function() return cfg.revive end,
-        Display = cn    and function() "复活机贴图:" .. (cfg.revive and "开" or "关") end
-                        or  function() "revive:" .. (cfg.revive and "on" or "off") end,
+        Display = cn    and function() return "复活机贴图:" .. (cfg.revive and "开" or "关") end
+                        or  function() return "revive:" .. (cfg.revive and "on" or "off") end,
         OnChange = function(b) cfg.revive = b save() end,
         Info =cn    and {"替换复活机。"}
                     or  {"revive mach rep."}
@@ -52,8 +52,8 @@ if MCMLoaded and MCM then
     MCM.AddSetting(cn and "官中+" or "ReppCN", {
         Type = ModConfigMenu.OptionType.BOOLEAN,
         CurrentSetting = function() return cfg.emoji end,
-        Display = cn    and function() "表情:" .. (cfg.emoji and "开" or "关") end
-                        or  function() "emoji:" .. (cfg.emoji and "on" or "off") end,
+        Display = cn    and function() return "表情:" .. (cfg.emoji and "开" or "关") end
+                        or  function() return "emoji:" .. (cfg.emoji and "on" or "off") end,
         OnChange = function(b) cfg.emoji = b save() end,
         Info =cn    and {"替换表情。"}
                     or  {"emoji replace."}
