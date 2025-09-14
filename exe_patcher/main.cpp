@@ -1,4 +1,4 @@
-#include <Windows.h>
+ï»¿#include <Windows.h>
 #include <commdlg.h>
 #include <Shlwapi.h>
 #include <string>
@@ -35,7 +35,7 @@ bool extract_userenv(wchar_t* isaac_ng_path) {
 	StrCatW(buff, L"bootstp.dll");
 	FILE* f = _wfopen(buff, L"wb");
 	if (!f) {
-		MessageBoxW(NULL, L"Çë¼ì²éÊÇ·ñÓÎÏ·ÕıÔÚÔËĞĞ£¬Ó²ÅÌ¿Õ¼äÊÇ·ñ³ä×ã£¬ÒÔ¼°É±¶¾Èí¼şÊÇ·ñÀ¹½Ø¡£", L"ÎŞ·¨Ğ´ÈëÎÄ¼şbootstp.dll", MB_ICONERROR);
+		MessageBoxW(NULL, L"è¯·æ£€æŸ¥æ˜¯å¦æ¸¸æˆæ­£åœ¨è¿è¡Œï¼Œç¡¬ç›˜ç©ºé—´æ˜¯å¦å……è¶³ï¼Œä»¥åŠæ€æ¯’è½¯ä»¶æ˜¯å¦æ‹¦æˆªã€‚", L"æ— æ³•å†™å…¥æ–‡ä»¶bootstp.dll", MB_ICONERROR);
 		return false;
 	}
 
@@ -62,10 +62,10 @@ int WinMain(
 	static wchar_t file[1024] = L"";
 	ofn.lpstrFile = file;
 	ofn.nMaxFile = sizeof(file);
-	ofn.lpstrFilter = L"ËùÓĞexe\0*.exe\0ÒÔÈöÖ÷³ÌĞò(isaac-ng.exe)\0isaac-ng*.exe\0";
+	ofn.lpstrFilter = L"æ‰€æœ‰exe\0*.exe\0ä»¥æ’’ä¸»ç¨‹åº(isaac-ng.exe)\0isaac-ng*.exe\0";
 	ofn.nFilterIndex = 2;
 	ofn.lpstrFileTitle = NULL;
-	ofn.lpstrTitle = L"ÇëÑ¡ÔñÒÔÈöÖ÷³ÌĞòÒÔÊÍ·Å²¹¶¡";
+	ofn.lpstrTitle = L"è¯·é€‰æ‹©ä»¥æ’’ä¸»ç¨‹åºä»¥é‡Šæ”¾è¡¥ä¸";
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOREADONLYRETURN | OFN_HIDEREADONLY;
 
 	for (int i = 0; pre_test_files[i]; i++) {
@@ -81,28 +81,28 @@ int WinMain(
 	}
 
 	if (
-		MessageBoxW(NULL, L"¼´½«Ñ¡ÔñÒÔÈöÖ÷³ÌĞòisaac-ng.exeÒÔ×¢Èë²¹¶¡£¬ÊÇ·ñ¼ÌĞø£¿", L"Ñ¯ÎÊ", MB_YESNO) == IDNO ||
+		MessageBoxW(NULL, L"å³å°†é€‰æ‹©ä»¥æ’’ä¸»ç¨‹åºisaac-ng.exeä»¥æ³¨å…¥è¡¥ä¸ï¼Œæ˜¯å¦ç»§ç»­ï¼Ÿ", L"è¯¢é—®", MB_YESNO) == IDNO ||
 		!GetOpenFileNameW(&ofn))
 	{
-		MessageBoxW(NULL, L"²¹¶¡ÒÑÈ¡Ïû", L"ÖĞÎÄ²¹¶¡", MB_ICONINFORMATION);
+		MessageBoxW(NULL, L"è¡¥ä¸å·²å–æ¶ˆ", L"ä¸­æ–‡è¡¥ä¸", MB_ICONINFORMATION);
 		return 0;
 	}
 	if(!file[0]){
-		MessageBoxW(NULL, L"ÎÄ¼ş²»´æÔÚ£¬²¹¶¡ÒÑÈ¡Ïû", L"ÖĞÎÄ²¹¶¡", MB_ICONINFORMATION);
+		MessageBoxW(NULL, L"æ–‡ä»¶ä¸å­˜åœ¨ï¼Œè¡¥ä¸å·²å–æ¶ˆ", L"ä¸­æ–‡è¡¥ä¸", MB_ICONINFORMATION);
 		return 0;
 	}
 	static char buff[1024 * 1024 * 50];
 
 	FILE* f = _wfopen(file, L"rb");
 	if (!f) {
-		MessageBoxW(NULL, L"ÎŞ·¨´ò¿ª´ËÎÄ¼ş£¬²¹¶¡ÒÑÈ¡Ïû", L"ÖĞÎÄ²¹¶¡", MB_ICONERROR);
+		MessageBoxW(NULL, L"æ— æ³•æ‰“å¼€æ­¤æ–‡ä»¶ï¼Œè¡¥ä¸å·²å–æ¶ˆ", L"ä¸­æ–‡è¡¥ä¸", MB_ICONERROR);
 		return 0;
 	}
 
 	auto sz = fread(buff, 1, sizeof(buff), f);
 
 	if (!feof(f)) {
-		MessageBoxW(NULL, L"ÎÄ¼ş¹ı´ó£¬²»Ö§³Ö²¹¶¡", L"ÖĞÎÄ²¹¶¡", MB_ICONERROR);
+		MessageBoxW(NULL, L"æ–‡ä»¶è¿‡å¤§ï¼Œä¸æ”¯æŒè¡¥ä¸", L"ä¸­æ–‡è¡¥ä¸", MB_ICONERROR);
 		return 0;
 	}
 	fclose(f);
@@ -126,12 +126,12 @@ int WinMain(
 
 	if (found_before) {
 		if (!extract_userenv(file)) {
-			MessageBoxW(NULL, L"ÎŞ·¨ÊÍ·Åbootstp.dllÎÄ¼ş£¬ÓÎÏ·ÎÄ¼şÎ´·¢Éú±ä¸ü£¬²¹¶¡³ÌĞòÒÑÍË³ö¡£", L"ÖĞÎÄ²¹¶¡´íÎó", MB_ICONERROR);
+			MessageBoxW(NULL, L"æ— æ³•é‡Šæ”¾bootstp.dllæ–‡ä»¶ï¼Œæ¸¸æˆæ–‡ä»¶æœªå‘ç”Ÿå˜æ›´ï¼Œè¡¥ä¸ç¨‹åºå·²é€€å‡ºã€‚", L"ä¸­æ–‡è¡¥ä¸é”™è¯¯", MB_ICONERROR);
 			return 0;
 		}
 		f = _wfopen(file, L"wb");
 		if (!f) {
-			MessageBoxW(NULL, L"ÎŞ·¨´ò¿ªÎÄ¼ş½øĞĞĞ´Èë¡£Çë¼ì²éÓÎÏ·ÊÇ·ñÕıÔÚÔËĞĞ¡¢ÊäÈëµÄÓÎÏ·Ö÷³ÌĞòÂ·¾¶ÊÇ·ñÕıÈ·¡£", L"ÖĞÎÄ²¹¶¡´íÎó", MB_ICONERROR);
+			MessageBoxW(NULL, L"æ— æ³•æ‰“å¼€æ–‡ä»¶è¿›è¡Œå†™å…¥ã€‚è¯·æ£€æŸ¥æ¸¸æˆæ˜¯å¦æ­£åœ¨è¿è¡Œã€è¾“å…¥çš„æ¸¸æˆä¸»ç¨‹åºè·¯å¾„æ˜¯å¦æ­£ç¡®ã€‚", L"ä¸­æ–‡è¡¥ä¸é”™è¯¯", MB_ICONERROR);
 			return 0;
 		}
 		int written = 0;
@@ -144,22 +144,22 @@ int WinMain(
 				break;
 		}
 		if (written != sz) {
-			MessageBoxW(NULL, L"ÓÎÏ·ÎÄ¼şĞ´Èë²»ÍêÕû£¬ÓÎÏ·ÎÄ¼şÒÑ±»ÆÆ»µ£¬ĞèÒªÖØĞÂĞ£ÑéÓÎÏ·ÍêÕûĞÔ¡£\nÎÄ¼şĞ´ÈëÊ§°Ü£¬Çë¼ì²é´ÅÅÌ¿Õ¼äÊÇ·ñ³ä×ã¡£", L"ÖĞÎÄ²¹¶¡´íÎó", MB_ICONERROR);
+			MessageBoxW(NULL, L"æ¸¸æˆæ–‡ä»¶å†™å…¥ä¸å®Œæ•´ï¼Œæ¸¸æˆæ–‡ä»¶å·²è¢«ç ´åï¼Œéœ€è¦é‡æ–°æ ¡éªŒæ¸¸æˆå®Œæ•´æ€§ã€‚\næ–‡ä»¶å†™å…¥å¤±è´¥ï¼Œè¯·æ£€æŸ¥ç£ç›˜ç©ºé—´æ˜¯å¦å……è¶³ã€‚", L"ä¸­æ–‡è¡¥ä¸é”™è¯¯", MB_ICONERROR);
 			return 0;
 		}
 		fclose(f);
-		MessageBoxW(NULL, L"ÓÎÏ·ÎÄ¼şĞ´Èë³É¹¦", L"ÖĞÎÄ²¹¶¡±¨¸æ", MB_ICONINFORMATION);
+		MessageBoxW(NULL, L"æ¸¸æˆæ–‡ä»¶å†™å…¥æˆåŠŸ", L"ä¸­æ–‡è¡¥ä¸æŠ¥å‘Š", MB_ICONINFORMATION);
 	}
 	else if (found_after) {
 		if (extract_userenv(file)) {
-			MessageBoxW(NULL, L"exeÎÄ¼şÒÑ¾­²¹¶¡¹ı£¬ÎŞĞèĞŞ¸Ä¡£ÒÑÖØĞÂÊÍ·Åbootstp.dllÎÄ¼ş¡£", L"ÖĞÎÄ²¹¶¡", MB_ICONINFORMATION);
+			MessageBoxW(NULL, L"exeæ–‡ä»¶å·²ç»è¡¥ä¸è¿‡ï¼Œæ— éœ€ä¿®æ”¹ã€‚å·²é‡æ–°é‡Šæ”¾bootstp.dllæ–‡ä»¶ã€‚", L"ä¸­æ–‡è¡¥ä¸", MB_ICONINFORMATION);
 		}
 		else {
-			MessageBoxW(NULL, L"exeÎÄ¼şÒÑ¾­²¹¶¡¹ı£¬µ«bootstp.dllÊÍ·ÅÊ§°Ü¡£", L"ÖĞÎÄ²¹¶¡", MB_ICONINFORMATION);
+			MessageBoxW(NULL, L"exeæ–‡ä»¶å·²ç»è¡¥ä¸è¿‡ï¼Œä½†bootstp.dllé‡Šæ”¾å¤±è´¥ã€‚", L"ä¸­æ–‡è¡¥ä¸", MB_ICONINFORMATION);
 		}
 	}
 	else {
-		MessageBoxW(NULL, L"ÎŞ·¨²¹¶¡exeÎÄ¼ş£¬Î´ÕÒµ½×Ö·û´®", L"ÖĞÎÄ²¹¶¡", MB_ICONERROR);
+		MessageBoxW(NULL, L"æ— æ³•è¡¥ä¸exeæ–‡ä»¶ï¼Œæœªæ‰¾åˆ°å­—ç¬¦ä¸²", L"ä¸­æ–‡è¡¥ä¸", MB_ICONERROR);
 	}
 
 	return 0;
