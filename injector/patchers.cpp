@@ -103,11 +103,11 @@ void __fastcall patched_iid_proprender(char* a1, char* ptr, ComplexStr* ptr2) {
 class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
 
-	// 更新点3 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
-#define IID_COLOR_FUNC_OFFSET (0x0084DA90 - IDA_BASE)
+	// 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
+#define IID_COLOR_FUNC_OFFSET (0x0084E0F0 - IDA_BASE)
 
 
-	//更新点2 图鉴补丁
+	// 更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
 		{0x084FC80 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
@@ -222,7 +222,7 @@ class IIDTrans : public Patcher {
 			}
 		}
 
-		unsigned char* movups_xmm0_spindown_dice = 0x0083D50B - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* movups_xmm0_spindown_dice = 0x0083D4EE - IDA_BASE + patchContext.isaac_ng_base;
 		if (movups_xmm0_spindown_dice[0] == 0x0F && movups_xmm0_spindown_dice[1] == 0x10 && movups_xmm0_spindown_dice[2] == 0x05) {
 			const char** movups_xmm0_spindown_dice_str = (const char**) & movups_xmm0_spindown_dice[3];
 			if (strcmp(*movups_xmm0_spindown_dice_str, "<color=0xFF00FF00>Spins down into <collectible=") != 0) {

@@ -394,6 +394,7 @@ void Inject() {
 					if (strncmp(tit->first.c_str(), (char*)it, tit->first.size()) == 0) {
 						strcpy((char*)it, tit->second.c_str());
 						replaceStrTasks.erase(tit);
+						break;
 					}
 				}
 				++it;
@@ -422,14 +423,13 @@ void Inject() {
 		auto errmsg = buff + failedPatcherMessages.str();
 		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁部分加载失败", MB_ICONINFORMATION);
 	}
-
 }
 
 namespace FileCopy {
 	bool AssertFileExist(std::wstring f) {
 		if (!PathFileExistsW(f.c_str())) {
 			auto err = L"文件不存在" + f;
-			MessageBoxW(NULL, L"中文模组加载器报错", err.c_str(), MB_ICONERROR);
+			MessageBoxW(NULL, err.c_str(), L"中文模组加载器报错", MB_ICONERROR);
 			return false;
 		}
 		return true;
@@ -439,13 +439,47 @@ namespace FileCopy {
 		if (!PathFileExistsW(a.c_str()))
 			return false;
 		std::ifstream ia(a, std::ios_base::binary | std::ios::in), ib(b, std::ios_base::binary | std::ios::in);
-		while (!ia.eof() && !ib.eof()) {
-			if (ia.get() != ib.get())
-				return false;
+
+		FILE* fa = _wfopen(a.c_str(), L"rb");
+		if (!fa) return false; // error
+		FILE* fb = _wfopen(b.c_str(), L"rb");
+		if (!fb) { fclose(fa); return false; }
+		bool same = true;
+		while (!feof(fa) && !feof(fb)) {
+			char buffa[1024];
+			char buffb[1024];
+			int sa = 0, sb = 0;
+
+			int tmp = 0;
+			do {
+				tmp = fread(buffa+tmp, 1, 1024 - tmp, fa);
+				if (tmp > 0)
+					sa += tmp;
+			} while (tmp > 0 && sa != 1024);
+
+			tmp = 0;
+			do {
+				tmp = fread(buffb + tmp, 1, 1024 - tmp, fb);
+				if (tmp > 0)
+					sb += tmp;
+			} while (tmp > 0 && sb != 1024);
+			if (sa != sb) {
+				same = false;
+				break;
+			}
+
+			for (int i = 0; same && i < sa; i++) {
+				if (buffa[i] != buffb[i])
+					same = false;
+			}
+			if (!same)
+				break;
 		}
-		if (ia.eof() != ib.eof())
-			return false;
-		return true;
+		if (feof(fa) != feof(fb))
+			same = false;
+		fclose(fa);
+		fclose(fb);
+		return same;
 	}
 
 	bool updated = false;
@@ -462,7 +496,7 @@ namespace FileCopy {
 				char buff[1024];
 				while (!feof(in)) {
 					auto sz = fread(buff, 1, 1024, in);
-					fwrite(buff, 1, 1024, out);
+					fwrite(buff, 1, sz, out);
 				}
 			}
 			if (in) fclose(in);
@@ -474,16 +508,16 @@ namespace FileCopy {
 	}
 
 	void InstallModFiles(std::wstring mod) {
-		CopyFileFromTo(mod + L"repentance_zh.a", L".\\resources\\packed\\repentance_zh.a");
+		CopyFileFromTo(mod + L"repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
 
 		if (MCM_CONFIG::custom_emoji) {
-			CopyFileFromTo(mod + L"repentance_de.a", L".\\resources\\packed\\repentance_de.a");
+			CopyFileFromTo(mod + L"repentance_emote.a.copy", L".\\resources\\packed\\repentance_de.a");
 		}
 		else {
 			unlink(".\\resources\\packed\\repentance_de.a");
 		}
 		if (MCM_CONFIG::custom_revive) {
-			CopyFileFromTo(mod + L"repentance_de.a", L".\\resources\\packed\\repentance_es.a");
+			CopyFileFromTo(mod + L"repentance_reveive.a.copy", L".\\resources\\packed\\repentance_es.a");
 		}
 		else {
 			unlink(".\\resources\\packed\\repentance_es.a");
@@ -523,13 +557,16 @@ extern "C" {
 				game_hash &= ~0x80000000;
 
 				if (ng_checksum != game_hash) {
+					wchar_t ascii[128];
+					_itow(game_hash, ascii, 10);
 					std::wstring output = L"游戏主程序哈希";
-					output += game_hash;
+					output += ascii;
 					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
 						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
-						L"\n在配置文件" + cfg + L"中删除check=";
-					output += ng_checksum;
-					output += L"行可在下次mod更新之前跳过此提示";
+						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除check=";
+					_itow(ng_checksum, ascii, 10);
+					output += ascii;
+					output += L"行";
 					if (IDNO == MessageBoxW(NULL, output.c_str(), L"中文补丁不匹配提示", MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}

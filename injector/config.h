@@ -55,7 +55,7 @@ public:
 				if (*value == '=') {
 					*value = '\0';
 					value++;
-					while (*value == ' ') value++;
+					//while (*value == ' ') value++;
 					break;
 				}
 				value++;
