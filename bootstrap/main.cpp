@@ -1,4 +1,4 @@
-﻿﻿#include <windows.h>
+﻿#include <windows.h>
 #include <fstream>
 #include <Shlwapi.h>
 #include <sstream>
@@ -165,7 +165,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		if (TryLoad(L".\\mods\\cn_rep+_3567884085\\"))
+		if (TryLoad(L".\\mods\\cn_rep+_3568677664\\"))
 			break;
 		break;
 	case DLL_THREAD_ATTACH:
