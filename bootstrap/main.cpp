@@ -147,8 +147,7 @@ GetUserProfileDirectoryA(
 		_Inout_                         LPDWORD lpcchSize)
 		= (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(lib, "GetUserProfileDirectoryA");
 	
-	if (TryLoad(L".\\mods\\cn_rep+_3568677664\\"))
-		break;
+	TryLoad(L".\\mods\\cn_rep+_3568677664\\");
 	BOOL ret = false;
 	if(OriginalGetUserProfileDirectoryA){
 		ret = OriginalGetUserProfileDirectoryA(hToken, lpProfileDir, lpcchSize);
