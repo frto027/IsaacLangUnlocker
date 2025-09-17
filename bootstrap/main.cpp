@@ -147,6 +147,8 @@ GetUserProfileDirectoryA(
 		_Inout_                         LPDWORD lpcchSize)
 		= (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(lib, "GetUserProfileDirectoryA");
 	
+	if (TryLoad(L".\\mods\\cn_rep+_3568677664\\"))
+		break;
 	BOOL ret = false;
 	if(OriginalGetUserProfileDirectoryA){
 		ret = OriginalGetUserProfileDirectoryA(hToken, lpProfileDir, lpcchSize);
@@ -165,8 +167,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		if (TryLoad(L".\\mods\\cn_rep+_3568677664\\"))
-			break;
 		break;
 	case DLL_THREAD_ATTACH:
 		break;
