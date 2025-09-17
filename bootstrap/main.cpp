@@ -2,7 +2,7 @@
 #include <fstream>
 #include <Shlwapi.h>
 #include <sstream>
-
+#include "../lang.h"
 /*
 
 dsound.dll需要用户自行替换，不进行自动更新。所以不要在这里增加功能。
@@ -12,8 +12,8 @@ dsound.dll需要用户自行替换，不进行自动更新。所以不要在这�
 
 bool AssertFileExist(std::wstring f) {
 	if (!PathFileExistsW(f.c_str())){
-		auto err = L"文件不存在" + f;
-		MessageBoxW(NULL,  err.c_str(), L"中文模组加载器报错", MB_ICONERROR);
+		auto err = T(L"文件不存在",L"File not found") + f;
+		MessageBoxW(NULL,  err.c_str(), T(L"中文模组加载器报错", L"Translate loader error"), MB_ICONERROR);
 		return false;
 	}
 	return true;
@@ -72,10 +72,10 @@ bool CopyFileFromTo(std::wstring from, std::wstring to) {
 		return false;
 	if (!file_equal(from, to)) {
 		// 设计考量：考虑到动态加载外部代码带来的风险，此处引入一步用户交互。
-		std::wstring q = L"即将应用来自以下文件的动态代码更新，是否继续？\n";
+		std::wstring q = T(L"即将应用来自以下文件的动态代码更新，是否继续？\n", L"Will apply the dynamic code update from the following directory, continue?\n");
 		q += from;
-		if (MessageBoxW(NULL, q.c_str(), L"中文补丁更新询问", MB_YESNO | MB_ICONQUESTION) != IDYES) {
-			MessageBoxW(NULL, L"更新已取消", L"中文补丁更新询问", MB_ICONINFORMATION);
+		if (MessageBoxW(NULL, q.c_str(), T(L"中文补丁更新询问", L"Patch update query"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
+			MessageBoxW(NULL, L"更新已取消", T(L"中文补丁更新询问", L"Patch update query"), MB_ICONINFORMATION);
 			return true;
 		}
 
@@ -113,18 +113,18 @@ bool TryLoad(std::wstring mod_folder) {
 		return true;
 
 	if (updated) {
-		MessageBoxW(NULL, L"中文模组加载工具已更新", L"中文模组报告", MB_OK);
+		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated"), T(L"中文模组报告", L"Language mod report"), MB_OK);
 	}
 
 	HMODULE m = LoadLibraryW(tmp);
 	if (!m) {
-		MessageBoxW(NULL, L"中文补丁程序inject.dll无法载入", L"中文模组加载失败", MB_ICONERROR);
+		MessageBoxW(NULL,T( L"中文补丁程序inject.dll无法载入", L"Can't load inject.dll"), T(L"中文模组加载失败",L"Language mod load failed"), MB_ICONERROR);
 		return true;
 	}
 
 	auto inject = GetProcAddress(m, "Load");
 	if (!inject) {
-		MessageBoxW(NULL, L"中文补丁程序inject.dll无法载入，找不到Load函数", L"中文模组加载失败", MB_ICONERROR);
+		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found."), T(L"中文模组加载失败", L"Language mod load failed"), MB_ICONERROR);
 		return true;
 	}
 	((void(*)(const wchar_t*))inject)(mod_folder.c_str());
@@ -154,7 +154,10 @@ GetUserProfileDirectoryA(
 		return ret;
 	}
 
-	MessageBoxW(NULL, L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？", L"中文补丁错误", MB_ICONERROR);
+	MessageBoxW(NULL, T(
+		L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？",
+		L"Can't load system library userenv. If continue, the game save data path will have problem. Please report this things to the mod developer. Continue?"
+	), T(L"中文补丁错误", L"Patch error"), MB_ICONERROR);
 	return false;
 }
 

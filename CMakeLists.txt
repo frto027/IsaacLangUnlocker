@@ -3,11 +3,28 @@ cmake_minimum_required(VERSION 3.20)
 
 project(Injector)
 
+option(LANG_CN "Enable Chinese language compile" ON)
+option(LANG_EN "Enable English language compile" OFF)
+option(LANG_KR "Enable Korean language compile" OFF)
+
 ########## injector ############
 
 option(ZYDIS_BUILD_TOOLS "" OFF)
 option(ZYDIS_BUILD_EXAMPLES "" OFF)
 add_subdirectory("zydis")
+
+if(LANG_CN)
+    add_definitions(-DLANG_KR)
+else()
+    add_definitions(-DLANG_NOT_CN)
+endif()
+
+if(LANG_KR)
+    add_definitions(-DLANG_KR)
+endif()
+if(LANG_EN)
+    add_definitions(-DLANG_EN)
+endif()
 
 add_library(inject SHARED
     injector/dllmain.cpp

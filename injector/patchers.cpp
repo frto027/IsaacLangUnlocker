@@ -3,6 +3,7 @@
 #include <Zydis/Zydis.h>
 #include "patchers.h"
 #include <sstream>
+#include "../lang.h"
 extern Config config;
 PatchContext patchContext;
 
@@ -38,7 +39,7 @@ class I18nUnlock : public Patcher {
 
 	void sigpatch(unsigned char* signature, int size, void* pos) {
 		unsigned char* bts = (unsigned char*)pos;
-		int langID = config.GetOrDefaultInt("option", "lang", 13);
+		int langID = config.GetOrDefaultInt("option", "lang", T(13, 11));
 		for (int i = 0; i < size; i++) {
 			if (signature[i] == 13 && bts[i] == 0) {
 				bts[i] = langID;
@@ -49,7 +50,7 @@ class I18nUnlock : public Patcher {
 public:
 	virtual void Patch() override{
 		isImportant = true;
-		Name = L"中文解锁补丁";
+		Name = T(L"中文解锁补丁", L"Korean unlock patch");
 
 		char* it = patchContext.text_beg;
 		while (it < patchContext.text_end) {
@@ -59,7 +60,7 @@ public:
 			}
 			it++;
 		}
-		throw PatchException(L"无法解锁语言");
+		throw PatchException(T(L"无法解锁语言", L"Can't unlock language"));
 	}
 };
 
@@ -224,7 +225,7 @@ class IIDTrans : public Patcher {
 		for (auto& f : strReplaceTasksFunc) {
 			for (auto& tsk : f.strReplaceTasks) {
 				if (tsk.doneTime != tsk.expectedDoneTime) {
-					errs << L"在函数" << std::hex << f.base << std::dec << L"中, 字符串“" << tsk.from << L"”预期" << tsk.expectedDoneTime << L"次,实际" << tsk.doneTime << L"次\n";
+					errs << T(L"在函数",L"In function") << std::hex << f.base << std::dec << T(L"中, 字符串“",L"string \"") << tsk.from << T(L"”预期",L"\" expected") << tsk.expectedDoneTime << T(L"次,实际", L" times, but actually ") << tsk.doneTime << T(L"次\n",L"times\n");
 					hasErr = true;
 				}
 			}
@@ -237,7 +238,7 @@ class IIDTrans : public Patcher {
 		unsigned char* mov_2fh_1 = 0x83D4FA - IDA_BASE + patchContext.isaac_ng_base;
 		unsigned char* mov_2fh_2 = 0x83D501 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
-			errs << L"spindowndice补丁点没有找到(call指令没有找到)\n";
+			errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)");
 			hasErr = true;
 		}
 		else {
@@ -249,7 +250,7 @@ class IIDTrans : public Patcher {
 		}
         if(prop_render_patched_count != prop_render_excepted_patch_count){
             hasErr = true;
-            errs << L"函数Hook与预期不符，预期"<<prop_render_excepted_patch_count<<L"次，实际"<<prop_render_patched_count<<L"次";
+			errs << T(L"函数Hook与预期不符，预期", L"Function hook mismatched, expected ") << prop_render_excepted_patch_count << T(L"次，实际", L" times, but actually ") << prop_render_patched_count << T(L"次", L" times");
         }
 		if (hasErr)
 			throw PatchException(errs.str());
@@ -348,7 +349,7 @@ public:
 
 
 	void Patch() {
-		Name = L"内置图鉴排版修复";
+		Name = T(L"内置图鉴排版修复", L"IID Layout Fix");
 		//unsigned char* first_mov = 0x009E60E4 - 0x400000 + patchContext.isaac_ng_base;
 		//if (*first_mov != 0x8a) { // mov ax,
 		//	throw PatchException(L"找不到修改点1");
@@ -361,7 +362,7 @@ public:
 		// GetCharacterWidth 最后一个引用偏移大于300h的函数
 		unsigned char* call_instr = 0x009E6C09 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
-			throw PatchException(L"找不到call修改点");
+			throw PatchException(T(L"找不到call修改点", L"Can't find call site."));
 		}
 
 		//*first_mov = 0x8b; //mov eax,
@@ -377,7 +378,7 @@ public:
 		//cmp     byte ptr [ecx+eax-1], 20h 
 		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
 		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
-			throw PatchException(L"无法补丁cmp指令");
+			throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction"));
 		}
 		cmp_linebreak[0] = 0xE8; //call
 		int* offset = (int*)&cmp_linebreak[1];

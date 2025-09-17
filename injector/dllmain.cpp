@@ -12,6 +12,7 @@
 #include <sstream>
 #include <Shlwapi.h>
 #include <optional>
+#include "../lang.h"
 
 extern Config config;
 Config config;
@@ -367,12 +368,12 @@ void Inject() {
 				catch (PatchException e) {
 					if (p->isImportant) {
 						failedImportantPatchers++;
-						failedPatcherMessages << L"关键";
+						failedPatcherMessages << T(L"关键", L"Essential ");
 					}
 					else {
 						failedPatchers++;
 					}
-					failedPatcherMessages << L"补丁“" << p->Name << L"”失败：" << e.msg << L"\n";
+					failedPatcherMessages << T(L"补丁“", L"patch \"") << p->Name << T(L"”失败：", L"\" failed") << e.msg << L"\n";
 				}
 			}
 
@@ -415,25 +416,31 @@ void Inject() {
 
 	if (need_patch_cn && failedImportantPatchers != 0) {
 		wchar_t buff[1024];
-		wsprintfW(buff, L"中文加载失败。\n关键功能没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
+		wsprintfW(buff, 
+			T(
+				L"中文加载失败。\n关键功能没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
+				L"Patch failed.\nEssential patch is failed(%d patch succeed, %d essential patch succeed, %d patch failed), your patch program doesn't match the game version, please waiting for update.\nerror log:"
+			),
 			succeedPatchers, failedImportantPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁加载失败", MB_ICONERROR);
+		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁加载失败", L"Can't load language patch"), MB_ICONERROR);
 	}
 	else if(need_patch_cn && (failedPatchers != 0) ){
 		wchar_t buff[1024];
-		wsprintfW(buff, L"游戏可以继续，但一部分中文不会显示。\n部分非关键功能没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
+		wsprintfW(buff, T(
+			L"游戏可以继续，但一部分中文不会显示。\n部分非关键功能没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
+			L"Game could continue, but part of language will not being translated.\nSome not essential patch didn't success(%d succeed, %d failed). your patch program doesn't match the game version, please waiting for update.\nlog:"),
 			succeedPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), L"中文补丁部分加载失败", MB_ICONINFORMATION);
+		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁部分加载失败", L"Some patch failed"), MB_ICONINFORMATION);
 	}
 }
 
 namespace FileCopy {
 	bool AssertFileExist(std::wstring f) {
 		if (!PathFileExistsW(f.c_str())) {
-			auto err = L"文件不存在" + f;
-			MessageBoxW(NULL, err.c_str(), L"中文模组加载器报错", MB_ICONERROR);
+			auto err = T(L"文件不存在",L"file not exists: ") + f;
+			MessageBoxW(NULL, err.c_str(), T(L"中文模组加载器报错",L"Translate mod load failed."), MB_ICONERROR);
 			return false;
 		}
 		return true;
@@ -505,11 +512,13 @@ namespace FileCopy {
 			}
 			if (in) fclose(in);
 			if (out) fclose(out);
-			us << hint_prefix << L"文件:" << to << L"已更新\n";
+			us << hint_prefix << T(L"文件:",L"file ") << to << T(L"已更新\n",L" has been updated\n");
 			updated = true;
 		}
 		return true;
 	}
+
+#ifdef LANG_CN
 
 	void InstallModFiles(std::wstring mod) {
 		CopyFileFromTo(mod + L"res\\repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
@@ -541,7 +550,23 @@ namespace FileCopy {
 			MessageBoxW(NULL, hint.c_str(), L"中文补丁配置已更新", MB_ICONINFORMATION);
 		}
 	}
+#endif
+
+
+#ifdef LANG_KR
+	void InstallModFiles(std::wstring mod) {
+		CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
+		if (updated) {
+			std::wstring hint = L"Kr patch has been updated\n";
+			hint += us.str();
+			MessageBoxW(NULL, hint.c_str(), L"Kr patch config update hint", MB_ICONINFORMATION);
+		}
+	}
+#endif
+
+
 }
+
 
 extern "C" {
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
@@ -571,15 +596,26 @@ extern "C" {
 				if (ng_checksum != game_hash) {
 					wchar_t ascii[128];
 					_itow(game_hash, ascii, 10);
-					std::wstring output = L"游戏主程序哈希";
+					std::wstring output = T(L"游戏主程序哈希", L"Isaac main program hash");
 					output += ascii;
+
+#ifndef LANG_NOT_CN
 					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
 						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
 						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除check=";
+
+#endif
+#ifdef LANG_KR
+					// please translate this into korean
+					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
+						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
+						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除check=";
+
+#endif
 					_itow(ng_checksum, ascii, 10);
 					output += ascii;
 					output += L"行";
-					if (IDNO == MessageBoxW(NULL, output.c_str(), L"中文补丁不匹配提示", MB_ICONINFORMATION | MB_YESNO))
+					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version"), MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}
 			}
