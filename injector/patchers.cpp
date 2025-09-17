@@ -100,6 +100,14 @@ void __fastcall patched_iid_proprender(char* a1, char* ptr, ComplexStr* ptr2) {
 	orig_patched_iid_proprender(a1, ptr, ptr2);
 }
 
+void* (__fastcall *orig_hooked_spindown_iid_strcat_call)(char* thiz, void * a2, void* a3, char** str, void * foo);
+const char* replaced_spindown_dice_text = "";
+void* __fastcall hooked_spindown_iid_strcat_call(char* thiz, void * a2, void* a3, char** str, void * foo) {
+	strcpy(*str, replaced_spindown_dice_text);
+	auto ret = orig_hooked_spindown_iid_strcat_call(thiz, a2, a3, str, foo);
+	return ret;
+}
+
 class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
 
@@ -222,20 +230,22 @@ class IIDTrans : public Patcher {
 			}
 		}
 
-		unsigned char* movups_xmm0_spindown_dice = 0x0083D4EE - IDA_BASE + patchContext.isaac_ng_base;
-		if (movups_xmm0_spindown_dice[0] == 0x0F && movups_xmm0_spindown_dice[1] == 0x10 && movups_xmm0_spindown_dice[2] == 0x05) {
-			const char** movups_xmm0_spindown_dice_str = (const char**) & movups_xmm0_spindown_dice[3];
-			if (strcmp(*movups_xmm0_spindown_dice_str, "<color=0xFF00FF00>Spins down into <collectible=") != 0) {
-				errs << L"spindowndice字符串没有找到（不符）\n";
-				hasErr = true;
-			}
-			else {
-				*movups_xmm0_spindown_dice_str = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
-			}
+
+		replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
+		unsigned char* call_hook = 0x83D553 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* push_30h = 0x83D4E1 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* mov_2fh_1 = 0x83D4FA - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* mov_2fh_2 = 0x83D501 - IDA_BASE + patchContext.isaac_ng_base;
+		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
+			errs << L"spindowndice补丁点没有找到(call指令没有找到)\n";
+			hasErr = true;
 		}
 		else {
-			errs << L"spindowndice字符串没有找到\n";
-			hasErr = true;
+			*push_30h = strlen(replaced_spindown_dice_text) + 1;
+			*mov_2fh_1 = *mov_2fh_2 = strlen(replaced_spindown_dice_text);
+			int* call_off = (int*)&call_hook[1];
+			orig_hooked_spindown_iid_strcat_call = (decltype(orig_hooked_spindown_iid_strcat_call))((int32_t)(call_hook + 5) + *call_off);
+			*call_off = ((int32_t)hooked_spindown_iid_strcat_call) - (int32_t)(call_hook + 5);
 		}
         if(prop_render_patched_count != prop_render_excepted_patch_count){
             hasErr = true;
