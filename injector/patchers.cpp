@@ -50,7 +50,7 @@ class I18nUnlock : public Patcher {
 public:
 	virtual void Patch() override{
 		isImportant = true;
-		Name = T(L"中文解锁补丁", L"Korean unlock patch");
+		Name = T(L"中文解锁补丁", L"Korean unlock patch", L"한국어 강제 적용 패치");
 
 		char* it = patchContext.text_beg;
 		while (it < patchContext.text_end) {
@@ -60,7 +60,7 @@ public:
 			}
 			it++;
 		}
-		throw PatchException(T(L"无法解锁语言", L"Can't unlock language"));
+		throw PatchException(T(L"无法解锁语言", L"Can't unlock language", L"한국어를 적용할 수 없습니다"));
 	}
 };
 
@@ -349,7 +349,7 @@ public:
 
 
 	void Patch() {
-		Name = T(L"内置图鉴排版修复", L"IID Layout Fix");
+		Name = T(L"内置图鉴排版修复", L"IID Layout Fix", L"내부 아이템 설명 레이아웃 수정");
 		//unsigned char* first_mov = 0x009E60E4 - 0x400000 + patchContext.isaac_ng_base;
 		//if (*first_mov != 0x8a) { // mov ax,
 		//	throw PatchException(L"找不到修改点1");
@@ -362,7 +362,7 @@ public:
 		// GetCharacterWidth 最后一个引用偏移大于300h的函数
 		unsigned char* call_instr = 0x009E6C09 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
-			throw PatchException(T(L"找不到call修改点", L"Can't find call site."));
+			throw PatchException(T(L"找不到call修改点", L"Can't find call site.", L"call 위치를 찾을 수 없습니다."));
 		}
 
 		//*first_mov = 0x8b; //mov eax,
@@ -378,7 +378,7 @@ public:
 		//cmp     byte ptr [ecx+eax-1], 20h 
 		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
 		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
-			throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction"));
+			throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
 		}
 		cmp_linebreak[0] = 0xE8; //call
 		int* offset = (int*)&cmp_linebreak[1];
