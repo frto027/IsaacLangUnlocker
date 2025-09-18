@@ -12,8 +12,8 @@ dsound.dll需要用户自行替换，不进行自动更新。所以不要在这�
 
 bool AssertFileExist(std::wstring f) {
 	if (!PathFileExistsW(f.c_str())){
-		auto err = T(L"文件不存在",L"File not found") + f;
-		MessageBoxW(NULL,  err.c_str(), T(L"中文模组加载器报错", L"Translate loader error"), MB_ICONERROR);
+		auto err = T(L"文件不存在",L"File not found",L"파일을 찾을 수 없습니다") + f;
+		MessageBoxW(NULL,  err.c_str(), T(L"中文模组加载器报错", L"Translate loader error", L"한글패치 로더 오류"), MB_ICONERROR);
 		return false;
 	}
 	return true;
@@ -72,10 +72,10 @@ bool CopyFileFromTo(std::wstring from, std::wstring to) {
 		return false;
 	if (!file_equal(from, to)) {
 		// 设计考量：考虑到动态加载外部代码带来的风险，此处引入一步用户交互。
-		std::wstring q = T(L"即将应用来自以下文件的动态代码更新，是否继续？\n", L"Will apply the dynamic code update from the following directory, continue?\n");
+		std::wstring q = T(L"即将应用来自以下文件的动态代码更新，是否继续？\n", L"Will apply the dynamic code update from the following directory, continue?\n", L"다음 파일의 동적 코드 업데이트를 적용하려 합니다. 진행하시겠습니까?\n");
 		q += from;
-		if (MessageBoxW(NULL, q.c_str(), T(L"中文补丁更新询问", L"Patch update query"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
-			MessageBoxW(NULL, L"更新已取消", T(L"中文补丁更新询问", L"Patch update query"), MB_ICONINFORMATION);
+		if (MessageBoxW(NULL, q.c_str(), T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 문의"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
+			MessageBoxW(NULL, L"更新已取消", T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 문의"), MB_ICONINFORMATION);
 			return true;
 		}
 
@@ -113,18 +113,18 @@ bool TryLoad(std::wstring mod_folder) {
 		return true;
 
 	if (updated) {
-		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated"), T(L"中文模组报告", L"Language mod report"), MB_OK);
+		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 보고서"), MB_OK);
 	}
 
 	HMODULE m = LoadLibraryW(tmp);
 	if (!m) {
-		MessageBoxW(NULL,T( L"中文补丁程序inject.dll无法载入", L"Can't load inject.dll"), T(L"中文模组加载失败",L"Language mod load failed"), MB_ICONERROR);
+		MessageBoxW(NULL,T( L"中文补丁程序inject.dll无法载入", L"Can't load inject.dll", L"inject.dll을 불러올 수 없습니다."), T(L"中文模组加载失败",L"Language mod load failed",L"한글패치 불러오기 실패"), MB_ICONERROR);
 		return true;
 	}
 
 	auto inject = GetProcAddress(m, "Load");
 	if (!inject) {
-		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found."), T(L"中文模组加载失败", L"Language mod load failed"), MB_ICONERROR);
+		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found.",L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다."), T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"), MB_ICONERROR);
 		return true;
 	}
 	((void(*)(const wchar_t*))inject)(mod_folder.c_str());
@@ -156,8 +156,9 @@ GetUserProfileDirectoryA(
 
 	MessageBoxW(NULL, T(
 		L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？",
-		L"Can't load system library userenv. If continue, the game save data path will have problem. Please report this things to the mod developer. Continue?"
-	), T(L"中文补丁错误", L"Patch error"), MB_ICONERROR);
+		L"Can't load system library userenv. If continue, the game save data path will have problem. Please report this things to the mod developer. Continue?",
+		L"시스템 라이브러리 userenv를 불러올 수 없습니다. 계속 진행할 경우 게임 데이터 경로에 문제가 발생할 수 있습니다. 패치 제작자에게 이 문제를 신고해주세요. 계속하시겠습니까?"
+	), T(L"中文补丁错误", L"Patch error", L"패치 오류"), MB_ICONERROR);
 	return false;
 }
 

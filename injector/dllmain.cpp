@@ -368,12 +368,12 @@ void Inject() {
 				catch (PatchException e) {
 					if (p->isImportant) {
 						failedImportantPatchers++;
-						failedPatcherMessages << T(L"关键", L"Essential ");
+						failedPatcherMessages << T(L"关键", L"Essential ", L"메인 ");
 					}
 					else {
 						failedPatchers++;
 					}
-					failedPatcherMessages << T(L"补丁“", L"patch \"") << p->Name << T(L"”失败：", L"\" failed") << e.msg << L"\n";
+					failedPatcherMessages << T(L"补丁“", L"patch \"", L"패치 \"") << p->Name << T(L"”失败：", L"\" failed", L"\" 실패") << e.msg << L"\n";
 				}
 			}
 
@@ -419,28 +419,30 @@ void Inject() {
 		wsprintfW(buff, 
 			T(
 				L"中文加载失败。\n关键功能没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
-				L"Patch failed.\nEssential patch is failed(%d patch succeed, %d essential patch succeed, %d patch failed), your patch program doesn't match the game version, please waiting for update.\nerror log:"
+				L"Patch failed.\nEssential patch is failed(%d patch succeed, %d essential patch succeed, %d patch failed), your patch program doesn't match the game version, please waiting for update.\nerror log:",
+				L"패치에 실패했습니다.\n메인 패치에 실패했으며(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패), 귀하의 패치 프로그램이 게임 버전과 일치하지 않습니다. 한글패치를 제거하거나 업데이트하셍요.\n오류 로그:"
 			),
 			succeedPatchers, failedImportantPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁加载失败", L"Can't load language patch"), MB_ICONERROR);
+		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁加载失败", L"Can't load language patch", L"한글패치를 불러올 수 없음"), MB_ICONERROR);
 	}
 	else if(need_patch_cn && (failedPatchers != 0) ){
 		wchar_t buff[1024];
 		wsprintfW(buff, T(
 			L"游戏可以继续，但一部分中文不会显示。\n部分非关键功能没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
-			L"Game could continue, but part of language will not being translated.\nSome not essential patch didn't success(%d succeed, %d failed). your patch program doesn't match the game version, please waiting for update.\nlog:"),
+			L"Game could continue, but part of language will not being translated.\nSome not essential patch didn't success(%d succeed, %d failed). your patch program doesn't match the game version, please waiting for update.\nlog:",
+			L"게임은 진행할 수 있지만, 일부 부분이 번역되지 않습니다.\n일부 기능에 대한 패치에 실패했습니다.(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패) 귀하의 패치 프로그램이 게임 버전과 일치하지 않으나 게임은 계쏙 진행할 수 있습니다.\n로그:"),
 			succeedPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁部分加载失败", L"Some patch failed"), MB_ICONINFORMATION);
+		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁部分加载失败", L"Some patch failed", L"일부 패치 실패"), MB_ICONINFORMATION);
 	}
 }
 
 namespace FileCopy {
 	bool AssertFileExist(std::wstring f) {
 		if (!PathFileExistsW(f.c_str())) {
-			auto err = T(L"文件不存在",L"file not exists: ") + f;
-			MessageBoxW(NULL, err.c_str(), T(L"中文模组加载器报错",L"Translate mod load failed."), MB_ICONERROR);
+			auto err = T(L"文件不存在",L"file not exists: ",L"다음 파일이 존재하지 않습니다: ") + f;
+			MessageBoxW(NULL, err.c_str(), T(L"中文模组加载器报错",L"Translate mod load failed.",L"한글패치 불러오기 실패"), MB_ICONERROR);
 			return false;
 		}
 		return true;
@@ -512,7 +514,7 @@ namespace FileCopy {
 			}
 			if (in) fclose(in);
 			if (out) fclose(out);
-			us << hint_prefix << T(L"文件:",L"file ") << to << T(L"已更新\n",L" has been updated\n");
+			us << hint_prefix << T(L"文件:",L"file ",L"파일 ") << to << T(L"已更新\n",L" has been updated\n",L" 업데이트됨\n");
 			updated = true;
 		}
 		return true;
@@ -557,9 +559,9 @@ namespace FileCopy {
 	void InstallModFiles(std::wstring mod) {
 		CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
 		if (updated) {
-			std::wstring hint = L"Kr patch has been updated\n";
+			std::wstring hint = L"한글패치가 적용된 설정 업데이트:\n";
 			hint += us.str();
-			MessageBoxW(NULL, hint.c_str(), L"Kr patch config update hint", MB_ICONINFORMATION);
+			MessageBoxW(NULL, hint.c_str(), L"한글패치가 업데이트되었습니다.", MB_ICONINFORMATION);
 		}
 	}
 #endif
@@ -607,15 +609,15 @@ extern "C" {
 #endif
 #ifdef LANG_KR
 					// please translate this into korean
-					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
-						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
-						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除check=";
+					output += L"패치와 게임의 해시가 일치하지 않습니다. 일반적으로 이 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. 아니오를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
+						L"주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
+						L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"에서 check= 항목을 삭제하세요.";
 
 #endif
 					_itow(ng_checksum, ascii, 10);
 					output += ascii;
 					output += L"行";
-					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version"), MB_ICONINFORMATION | MB_YESNO))
+					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version", L"패치가 게임 버전과 대응되지 않습니다."), MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}
 			}
