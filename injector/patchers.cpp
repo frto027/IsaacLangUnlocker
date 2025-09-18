@@ -39,7 +39,7 @@ class I18nUnlock : public Patcher {
 
 	void sigpatch(unsigned char* signature, int size, void* pos) {
 		unsigned char* bts = (unsigned char*)pos;
-		int langID = config.GetOrDefaultInt("option", "lang", T(13, 11));
+		int langID = config.GetOrDefaultInt("option", "lang", T(13, 0, 11));
 		for (int i = 0; i < size; i++) {
 			if (signature[i] == 13 && bts[i] == 0) {
 				bts[i] = langID;
@@ -375,6 +375,7 @@ public:
 		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
 		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
 
+#ifdef LANG_CN
 		//cmp     byte ptr [ecx+eax-1], 20h 
 		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
 		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
@@ -383,6 +384,7 @@ public:
 		cmp_linebreak[0] = 0xE8; //call
 		int* offset = (int*)&cmp_linebreak[1];
 		*offset = ((uint32_t)&IIdLineFixReturn) - (int32_t)cmp_linebreak - 5;
+#endif
 	}
 };
 decltype(&IIdLineWidthFix::FixGlyph) IIdLineWidthFix::origFixGlyph = nullptr;

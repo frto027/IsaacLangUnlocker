@@ -14,7 +14,7 @@ option(ZYDIS_BUILD_EXAMPLES "" OFF)
 add_subdirectory("zydis")
 
 if(LANG_CN)
-    add_definitions(-DLANG_KR)
+    add_definitions(-DLANG_CN)
 else()
     add_definitions(-DLANG_NOT_CN)
 endif()

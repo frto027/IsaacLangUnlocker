@@ -96,7 +96,7 @@ int WinMain(
 	if (
 		MessageBoxW(NULL, T(
 			L"即将选择以撒主程序isaac-ng.exe以注入补丁，是否继续？",
-			L"Will select isaac-ng to inject patch, continue?"
+			L"Will select isaac-ng to inject patch, continue?",
 			L"아이작 메인 프로그램 isaac-ng.exe에 패치를 주입하려 합니다. 진행하시겠습니까?"), T(L"询问", L"Query", L"문의"), MB_YESNO) == IDNO ||
 		!GetOpenFileNameW(&ofn))
 	{
