@@ -13,9 +13,12 @@
 #include <Shlwapi.h>
 #include <optional>
 #include "../lang.h"
+#include "../defines.h"
 
 extern Config config;
 Config config;
+
+Config patchConfig;
 
 namespace MCM_CONFIG {
 	bool custom_revive = true;
@@ -520,9 +523,8 @@ namespace FileCopy {
 		return true;
 	}
 
-#ifdef LANG_CN
+	void InstallModFilesCN(std::wstring mod) {
 
-	void InstallModFiles(std::wstring mod) {
 		CopyFileFromTo(mod + L"res\\repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
 
 		if (MCM_CONFIG::custom_emoji) {
@@ -552,11 +554,7 @@ namespace FileCopy {
 			MessageBoxW(NULL, hint.c_str(), L"中文补丁配置已更新", MB_ICONINFORMATION);
 		}
 	}
-#endif
-
-
-#ifdef LANG_KR
-	void InstallModFiles(std::wstring mod) {
+	void InstallModFilesKR(std::wstring mod) {
 		CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
 		if (updated) {
 			std::wstring hint = L"한글패치가 적용된 설정 업데이트:\n";
@@ -564,8 +562,13 @@ namespace FileCopy {
 			MessageBoxW(NULL, hint.c_str(), L"한글패치가 업데이트되었습니다.", MB_ICONINFORMATION);
 		}
 	}
-#endif
 
+	void InstallModFiles(std::wstring mod){
+		switch(getLang()){
+			case LANG_CN: return InstallModFilesCN(mod);
+			case LANG_KR: return InstallModFilesKR(mod);
+		}
+	}
 
 }
 
@@ -577,6 +580,12 @@ extern "C" {
 		std::wstring cfg = modfolder_root;
 		cfg += L"res\\config.ini";
 		config.Load(cfg.c_str());
+
+		if(getLang() == LANG_CN){
+			patchConfig.Load(cfg.c_str());
+		}else{
+			patchConfig.Load(PATCHER_PATH L"res\\config.ini");
+		}
 
 		int ng_checksum = config.GetOrDefaultInt("isaac", "check");
 		if (ng_checksum != -1 && PathFileExists("isaac-ng.exe")) {
@@ -601,23 +610,23 @@ extern "C" {
 					std::wstring output = T(L"游戏主程序哈希", L"Isaac main program hash");
 					output += ascii;
 
-#ifdef LANG_CN
-					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
-						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
-						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除内容为“check=";
-
-#endif
-#ifdef LANG_EN
-					output += L"Game hash mismatch with config.ini. Press 'no' will skip the install. Force install?"
-						L" Press 'yes' will overwrite the game resource, which maybe not correctly.\n"
-						L"\nYou could remove the following line in 'config.ini' to skip this hint until the mod next update:\n"
-#endif
-#ifdef LANG_KR
-					output += L"패치와 게임의 해시가 일치하지 않습니다. 일반적으로 이 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. 아니오를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
-						L"주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
-						L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"check=";
-
-#endif
+					switch(getLang()){
+						case LANG_CN:
+							output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
+								L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
+								L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除内容为“check=";
+						break;
+						case LANG_EN:
+							output += L"Game hash mismatch with config.ini. Press 'no' will skip the install. Force install?"
+								L" Press 'yes' will overwrite the game resource, which maybe not correctly.\n"
+								L"\nYou could remove the following line in 'config.ini' to skip this hint until the mod next update:\n";
+						break;
+						case LANG_KR:
+							output += L"패치와 게임의 해시가 일치하지 않습니다. 일반적으로 이 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. 아니오를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
+								L"주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
+								L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"check=";
+						break;
+					}
 					_itow(ng_checksum, ascii, 10);
 					output += ascii;
 					output += T(L"”的行", L"", L" 줄을 삭제하세요");

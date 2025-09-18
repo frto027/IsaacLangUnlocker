@@ -3,6 +3,7 @@
 #include <Shlwapi.h>
 #include <sstream>
 #include "../lang.h"
+#include "../defines.h"
 /*
 
 dsound.dll需要用户自行替换，不进行自动更新。所以不要在这里增加功能。
@@ -109,9 +110,14 @@ bool TryLoad(std::wstring mod_folder) {
 	// 我们将模组目录下的loader.bin拷贝至游戏目录的inject.dll并加载，以避免出现文件锁，使得游戏无法更新mod。
 	
 	const wchar_t* tmp = L".\\inject.dll";
-	if (!CopyFileFromTo(mod_folder + L"res\\inject.bin", tmp))
-		return true;
-
+	if (getLang() == LANG_CN) {
+		if (!CopyFileFromTo(mod_folder + L"res\\inject.bin", tmp))
+			return true;
+	}
+	else {
+		if (!CopyFileFromTo(PATCHER_PATH L"res\\inject.bin", tmp))
+			return true;
+	}
 	if (updated) {
 		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 보고서"), MB_OK);
 	}

@@ -375,16 +375,17 @@ public:
 		origFixGlyph = (decltype(origFixGlyph))((int32_t)call_instr + 5 + *call_offset);
 		*call_offset = ((uint32_t)&FixGlyph) - (int32_t)call_instr - 5;
 
-#ifdef LANG_CN
-		//cmp     byte ptr [ecx+eax-1], 20h 
-		unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
-		if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
-			throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
+		if(getLang() == LANG_CN){
+			// this is line break fix, only for chinese
+			//cmp     byte ptr [ecx+eax-1], 20h 
+			unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
+			if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
+				throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
+			}
+			cmp_linebreak[0] = 0xE8; //call
+			int* offset = (int*)&cmp_linebreak[1];
+			*offset = ((uint32_t)&IIdLineFixReturn) - (int32_t)cmp_linebreak - 5;
 		}
-		cmp_linebreak[0] = 0xE8; //call
-		int* offset = (int*)&cmp_linebreak[1];
-		*offset = ((uint32_t)&IIdLineFixReturn) - (int32_t)cmp_linebreak - 5;
-#endif
 	}
 };
 decltype(&IIdLineWidthFix::FixGlyph) IIdLineWidthFix::origFixGlyph = nullptr;
