@@ -601,22 +601,26 @@ extern "C" {
 					std::wstring output = T(L"游戏主程序哈希", L"Isaac main program hash");
 					output += ascii;
 
-#ifndef LANG_NOT_CN
+#ifdef LANG_CN
 					output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
 						L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
-						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除check=";
+						L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除内容为“check=";
 
 #endif
+#ifdef LANG_EN
+					output += L"Game hash mismatch with config.ini. Press 'no' will skip the install. Force install?"
+						L" Press 'yes' will overwrite the game resource, which maybe not correctly.\n"
+						L"\nYou could remove the following line in 'config.ini' to skip this hint until the mod next update:\n"
+#endif
 #ifdef LANG_KR
-					// please translate this into korean
 					output += L"패치와 게임의 해시가 일치하지 않습니다. 일반적으로 이 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. 아니오를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
 						L"주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
-						L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"에서 check= 항목을 삭제하세요.";
+						L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"check=";
 
 #endif
 					_itow(ng_checksum, ascii, 10);
 					output += ascii;
-					output += L"行";
+					output += T(L"”的行", L"", L" 줄을 삭제하세요");
 					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version", L"패치가 게임 버전과 대응되지 않습니다."), MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}
