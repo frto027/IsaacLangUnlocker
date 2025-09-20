@@ -1,7 +1,10 @@
 ---- licence for this project ----
 
-THIS PROJECT IS UNLICENSED
+THIS PROJECT IS UNLICENSED. All rights reserved.
 However I want keep this project open source. Welcome to request a license for this project.
+For safety reasons, redistribution with automatic updates is specifically prohibited. Please contact me for permission for any purpose.
+
+This strict license is to prevent malicious distribution. If you have any suggestions on the license agreement, I will be grateful if you could share it in the issue.
 
 ---- licence for third-party deps ----
 
