@@ -2,6 +2,7 @@
 
 THIS PROJECT IS UNLICENSED
 However I want keep this project open source. Welcome to request a license for this project.
+For safety reasons, redistribution with automatic updates is specifically prohibited. Please contact me for permission for any purpose.
 
 ---- licence for third-party deps ----
 
