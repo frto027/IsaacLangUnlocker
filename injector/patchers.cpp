@@ -108,6 +108,12 @@ void* __fastcall hooked_spindown_iid_strcat_call(char* thiz, void * a2, void* a3
 	auto ret = orig_hooked_spindown_iid_strcat_call(thiz, a2, a3, str, foo);
 	return ret;
 }
+static const char* leakStr(const std::string& str) {
+	char* buff = (char*)malloc(str.size() + 1);
+	if (buff)
+		strcpy(buff, str.c_str());
+	return buff;
+}
 
 class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
@@ -137,13 +143,6 @@ class IIDTrans : public Patcher {
 		{0x084E6F0 - IDA_BASE },
 
 	};
-	static const char* leakStr(const std::string& str) {
-		char* buff = (char*)malloc(str.size() + 1);
-		if (buff)
-			strcpy(buff, str.c_str());
-		return buff;
-	}
-
 
 	virtual void Patch() override{
 		Name = L"内置图鉴补丁";
@@ -390,6 +389,24 @@ public:
 };
 decltype(&IIdLineWidthFix::FixGlyph) IIdLineWidthFix::origFixGlyph = nullptr;
 
+class OnlineTextPatcher : public Patcher {
+public:
+	void Patch() {
+		Name = T(L"联机文本补丁", L"Online text patch");
+
+		const char** game_start_in = (const char**)(0x008E7ACF - IDA_BASE + patchContext.isaac_ng_base);
+		auto trans = config.GetOrDefault("OnlineTrans", "GameStartIn", "");
+		if (trans != "") {
+			if (*game_start_in >= patchContext.data_beg && *game_start_in < patchContext.data_end && strcmp(*game_start_in, "Game starting in... %d") == 0) {
+				*game_start_in = leakStr(trans);
+			}
+			else {
+				throw PatchException(T(L"找不到开始游戏字符串", L"Can't find game start in... text."));
+			}
+		}
+	}
+};
+
 
 std::vector<Patcher*> patchers;
 
@@ -398,5 +415,6 @@ void InitPatchers() {
 		new I18nUnlock(),
 		new IIDTrans(),
 		new IIdLineWidthFix(),
+		new OnlineTextPatcher(),
 	};
 }
