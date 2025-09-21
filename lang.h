@@ -14,7 +14,7 @@ static int getLang(){
 			result = LANG_CN;
 		}else if(PathFileExistsW(L".\\mods\\en_rep+\\")){
 			result = LANG_EN;
-		}else if(PathFileExistsW(L".\\mods\\kr_rep+\\")){
+		}else if(PathFileExistsW(L".\\mods\\repentance+ korean_3371064337\\")){
 			result = LANG_KR;
 		}
 		else {

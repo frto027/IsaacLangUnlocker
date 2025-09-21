@@ -156,7 +156,7 @@ GetUserProfileDirectoryA(
 	TryLoad(
 		T(L".\\mods\\cn_rep+_3568677664\\", 
 			L".\\mods\\en_rep+\\",
-			L".\\mods\\kr_rep+\\"
+			L".\\mods\\repentance+ korean_3371064337\\"
 		));
 	BOOL ret = false;
 	if(OriginalGetUserProfileDirectoryA){
