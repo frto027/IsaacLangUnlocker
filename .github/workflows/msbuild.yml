@@ -40,19 +40,16 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Setup cmake project
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: cmake -B build -G "Visual Studio 17 2022" -A win32
 
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}/build
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+      working-directory: build
       run: msbuild ALL_BUILD.vcxproj -p:Configuration=Release
     
     - name: Get Result
-      working-directory: ${{env.GITHUB_WORKSPACE}}/build
+      working-directory: build
       run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        path: build\output
+        path: build/output
