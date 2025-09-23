@@ -407,6 +407,21 @@ public:
 	}
 };
 
+class MinimapTimeLabelFontPatcher : public Patcher {
+	void Patch() {
+		Name = T(L"小地图时间字体", L"Minimap Font patch");
+
+		if (getLang() != LANG_KR) return;
+
+		unsigned char* jmp = 0x09861E7 - IDA_BASE + patchContext.isaac_ng_base;
+		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
+			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location"));
+		}
+		// nop the jmp
+		jmp[0] = 0x90;
+		jmp[1] = 0x90;
+	}
+};
 
 std::vector<Patcher*> patchers;
 
@@ -416,5 +431,6 @@ void InitPatchers() {
 		new IIDTrans(),
 		new IIdLineWidthFix(),
 		new OnlineTextPatcher(),
+		new MinimapTimeLabelFontPatcher(),
 	};
 }
