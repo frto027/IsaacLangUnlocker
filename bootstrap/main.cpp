@@ -75,8 +75,8 @@ bool CopyFileFromTo(std::wstring from, std::wstring to) {
 		// 设计考量：考虑到动态加载外部代码带来的风险，此处引入一步用户交互。
 		std::wstring q = T(L"即将应用来自以下文件的动态代码更新，是否继续？\n", L"Will apply the dynamic code update from the following directory, continue?\n", L"다음 파일의 동적 코드 업데이트를 적용하려 합니다. 진행하시겠습니까?\n");
 		q += from;
-		if (MessageBoxW(NULL, q.c_str(), T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 문의"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
-			MessageBoxW(NULL, L"更新已取消", T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 문의"), MB_ICONINFORMATION);
+		if (MessageBoxW(NULL, q.c_str(), T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 안내"), MB_YESNO | MB_ICONQUESTION) != IDYES) {
+			MessageBoxW(NULL, L"更新已取消", T(L"中文补丁更新询问", L"Patch update query", L"패치 업데이트 안내"), MB_ICONINFORMATION);
 			return true;
 		}
 
@@ -119,7 +119,7 @@ bool TryLoad(std::wstring mod_folder) {
 			return true;
 	}
 	if (updated) {
-		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 보고서"), MB_OK);
+		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 리포트"), MB_OK);
 	}
 
 	HMODULE m = LoadLibraryW(tmp);

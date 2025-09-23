@@ -97,7 +97,7 @@ int WinMain(
 		MessageBoxW(NULL, T(
 			L"即将选择以撒主程序isaac-ng.exe以注入补丁，是否继续？",
 			L"Will select isaac-ng to inject patch, continue?",
-			L"아이작 메인 프로그램 isaac-ng.exe에 패치를 주입하려 합니다. 진행하시겠습니까?"), T(L"询问", L"Query", L"문의"), MB_YESNO) == IDNO ||
+			L"아이작 메인 프로그램 isaac-ng.exe에 패치를 주입하려 합니다. 진행하시겠습니까?"), T(L"询问", L"Query", L"안내"), MB_YESNO) == IDNO ||
 		!GetOpenFileNameW(&ofn))
 	{
 		MessageBoxW(NULL, T(L"补丁已取消",L"Patch has been canceled",L"패치가 취소되었습니다"), T(L"中文补丁", L"Language mod patch", L"한글패치"), MB_ICONINFORMATION);
@@ -173,7 +173,7 @@ int WinMain(
 			return 0;
 		}
 		fclose(f);
-		MessageBoxW(NULL, T(L"游戏文件写入成功", L"Game file patch succeed", L"게임 파일이 성공적으로 패치되었습니다"), T(L"中文补丁报告", L"Patch report", L"패치 보고서"), MB_ICONINFORMATION);
+		MessageBoxW(NULL, T(L"游戏文件写入成功", L"Game file patch succeed", L"게임 파일이 성공적으로 패치되었습니다"), T(L"中文补丁报告", L"Patch report", L"패치 리포트"), MB_ICONINFORMATION);
 	}
 	else if (found_after) {
 		if (extract_userenv(file)) {
