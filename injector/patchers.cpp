@@ -124,6 +124,7 @@ class IIDTrans : public Patcher {
 
 	// 更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
+		//搜索字符串 empty red health找所在函数
 		{0x0084FBC0 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
 			{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心")		},
@@ -230,7 +231,15 @@ class IIDTrans : public Patcher {
 			}
 		}
 
-
+		//搜索<color=FFF7513B>%.2f<color=0xffffffff>找caller的caller，按顺序找到
+		/*
+		push 30h
+		...
+		mov xxx 2fh
+		mov xxx 2fh
+		...
+		call
+		*/
 		replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
 		unsigned char* call_hook = 0x0083D4B3 - IDA_BASE + patchContext.isaac_ng_base;
 		unsigned char* push_30h = 0x0083D440 + 1 - IDA_BASE + patchContext.isaac_ng_base;
@@ -358,7 +367,7 @@ public:
 		//	throw PatchException(L"找不到修改点2");
 		//}
 
-		// GetCharacterWidth 最后一个引用偏移大于300h的函数
+		// GetCharacterWidth 最后一个引用偏移大于300h的caller site, 偏移大概是489左右？
 		unsigned char* call_instr = 0x009E67B9 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(T(L"找不到call修改点", L"Can't find call site.", L"call 위치를 찾을 수 없습니다."));
@@ -376,6 +385,7 @@ public:
 
 		if(getLang() == LANG_CN){
 			// this is line break fix, only for chinese
+			// 往下翻，找这条汇编
 			//cmp     byte ptr [ecx+eax-1], 20h 
 			unsigned char* cmp_linebreak = 0x09E70AF - IDA_BASE + patchContext.isaac_ng_base;
 			if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
@@ -394,6 +404,7 @@ public:
 	void Patch() {
 		Name = T(L"联机文本补丁", L"Online text patch");
 
+		//Game starting in... %d的引用点
 		const char** game_start_in = (const char**)(0x08E75CE + 1 - IDA_BASE + patchContext.isaac_ng_base);
 		auto trans = config.GetOrDefault("OnlineTrans", "GameStartIn", "");
 		if (trans != "") {
