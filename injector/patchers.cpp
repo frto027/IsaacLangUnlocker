@@ -358,25 +358,12 @@ public:
 
 	void Patch() {
 		Name = T(L"内置图鉴排版修复", L"IID Layout Fix", L"내부 아이템 설명 레이아웃 수정");
-		//unsigned char* first_mov = 0x009E60E4 - 0x400000 + patchContext.isaac_ng_base;
-		//if (*first_mov != 0x8a) { // mov ax,
-		//	throw PatchException(L"找不到修改点1");
-		//}
-		//unsigned char* second_mov = 0x009E60F3 - 0x400000 + patchContext.isaac_ng_base;
-		//if (second_mov[0] != 0x0F || second_mov[1] != 0xBE || second_mov[2] != 0xC0) { // movsx, eax, al
-		//	throw PatchException(L"找不到修改点2");
-		//}
 
 		// GetCharacterWidth 最后一个引用偏移大于300h的caller site, 偏移大概是489左右？
 		unsigned char* call_instr = 0x009E67B9 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(T(L"找不到call修改点", L"Can't find call site.", L"call 위치를 찾을 수 없습니다."));
 		}
-
-		//*first_mov = 0x8b; //mov eax,
-		//second_mov[0] = 0x90;//nop
-		//second_mov[1] = 0x90;
-		//second_mov[2] = 0x90;
 
 		//hook the call
 		int32_t* call_offset = (int32_t*)&call_instr[1];
