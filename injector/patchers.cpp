@@ -412,6 +412,8 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 		Name = T(L"小地图时间字体", L"Minimap Font patch");
 
 		//if (getLang() != LANG_KR) return;
+		if(config.GetOrDefault("option", "noMinimapFontFix", "0") == "1")
+			return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
 		unsigned char* jmp = 0x0985D67 - IDA_BASE + patchContext.isaac_ng_base;
