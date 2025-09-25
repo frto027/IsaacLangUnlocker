@@ -119,12 +119,12 @@ class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
 
 	// 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
-#define IID_COLOR_FUNC_OFFSET (0x0084E0F0 - IDA_BASE)
+#define IID_COLOR_FUNC_OFFSET (0x0084E050 - IDA_BASE)
 
 
 	// 更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
-		{0x084FC80 - IDA_BASE, {
+		{0x0084FBC0 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
 			{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心")		},
 			{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心")		},
@@ -139,8 +139,8 @@ class IIDTrans : public Patcher {
 		}},
 
 		//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
-		{0x084E390 - IDA_BASE },
-		{0x084E6F0 - IDA_BASE },
+		{0x0084E2F0 - IDA_BASE },
+		{0x0084E650 - IDA_BASE },
 
 	};
 
@@ -232,10 +232,10 @@ class IIDTrans : public Patcher {
 
 
 		replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
-		unsigned char* call_hook = 0x83D553 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* push_30h = 0x83D4E1 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* mov_2fh_1 = 0x83D4FA - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* mov_2fh_2 = 0x83D501 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* call_hook = 0x0083D4B3 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* push_30h = 0x0083D440 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* mov_2fh_1 = 0x083D457 + 3 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* mov_2fh_2 = 0x083D45E + 3 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
 			errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)");
 			hasErr = true;
@@ -359,7 +359,7 @@ public:
 		//}
 
 		// GetCharacterWidth 最后一个引用偏移大于300h的函数
-		unsigned char* call_instr = 0x009E6C09 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* call_instr = 0x009E67B9 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(T(L"找不到call修改点", L"Can't find call site.", L"call 위치를 찾을 수 없습니다."));
 		}
@@ -377,7 +377,7 @@ public:
 		if(getLang() == LANG_CN){
 			// this is line break fix, only for chinese
 			//cmp     byte ptr [ecx+eax-1], 20h 
-			unsigned char* cmp_linebreak = 0x009E74FF - IDA_BASE + patchContext.isaac_ng_base;
+			unsigned char* cmp_linebreak = 0x09E70AF - IDA_BASE + patchContext.isaac_ng_base;
 			if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
 				throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
 			}
@@ -394,7 +394,7 @@ public:
 	void Patch() {
 		Name = T(L"联机文本补丁", L"Online text patch");
 
-		const char** game_start_in = (const char**)(0x008E7ACF - IDA_BASE + patchContext.isaac_ng_base);
+		const char** game_start_in = (const char**)(0x08E75CE + 1 - IDA_BASE + patchContext.isaac_ng_base);
 		auto trans = config.GetOrDefault("OnlineTrans", "GameStartIn", "");
 		if (trans != "") {
 			if (*game_start_in >= patchContext.data_beg && *game_start_in < patchContext.data_end && strcmp(*game_start_in, "Game starting in... %d") == 0) {
@@ -414,7 +414,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 		if (getLang() != LANG_KR) return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
-		unsigned char* jmp = 0x09861E7 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* jmp = 0x0985D67 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
 			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location"));
 		}
