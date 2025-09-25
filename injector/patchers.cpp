@@ -233,7 +233,7 @@ class IIDTrans : public Patcher {
 
 		replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
 		unsigned char* call_hook = 0x0083D4B3 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* push_30h = 0x0083D440 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* push_30h = 0x0083D440 + 1 - IDA_BASE + patchContext.isaac_ng_base;
 		unsigned char* mov_2fh_1 = 0x083D457 + 3 - IDA_BASE + patchContext.isaac_ng_base;
 		unsigned char* mov_2fh_2 = 0x083D45E + 3 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
@@ -411,7 +411,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 	void Patch() {
 		Name = T(L"小地图时间字体", L"Minimap Font patch");
 
-		if (getLang() != LANG_KR) return;
+		//if (getLang() != LANG_KR) return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
 		unsigned char* jmp = 0x0985D67 - IDA_BASE + patchContext.isaac_ng_base;
