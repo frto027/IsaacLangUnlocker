@@ -6,6 +6,87 @@
 #include "res.inl"
 #include "../lang.h"
 
+#include <optional>
+#include <fstream>
+
+std::optional<std::string> GuessSteamInstall() {
+	std::optional<std::string> empty_path;
+
+	HKEY key;
+	if (RegOpenKeyExA(HKEY_CURRENT_USER, "SOFTWARE\\Valve\\Steam", NULL, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS) {
+		return empty_path;
+	}
+	DWORD type;
+	char steamPath[1024] = {};
+	DWORD dataSize = sizeof(steamPath) - 1;
+	if (RegQueryValueEx(key, "SteamPath", NULL, &type, (BYTE*)steamPath, &dataSize) != ERROR_SUCCESS)
+	{
+		RegCloseKey(key);
+		return empty_path;
+	}
+	steamPath[dataSize] = '\0';
+	RegCloseKey(key);
+	
+	std::string steamPathStr((char*)steamPath);
+	for(auto &it : steamPathStr)
+		if(it == '/')
+			it = '\\';
+	std::string game_path = steamPathStr + "\\steamapps\\common\\The Binding of Isaac Rebirth\\isaac-ng.exe";
+	if (PathFileExistsA(game_path.c_str())) {
+		return game_path;
+	}
+
+	std::string libfolders = steamPathStr + "\\config\\libraryfolders.vdf";
+	if (PathFileExistsA(libfolders.c_str())) {
+		std::string folder_path = "";
+		std::ifstream f(libfolders);
+		while (!f.eof()) {
+			while (f.peek() == '\t' || f.peek() == '\r' || f.peek() == '\n' || f.peek() == ' ')
+				f.get();
+			char buff[1024];
+			f.getline(buff, 1023);
+			if (strncmp(buff, "\"path\"", 6) == 0) {
+				char* bptr = buff + 6;
+				while (*bptr == '\t' || *bptr == ' ')
+					bptr++;
+				if (*bptr++ != '"') {
+					continue;
+				}
+				bool escaped = false;
+				char content[1024];
+				int content_size = 0;
+				while (*bptr != '\r' && *bptr != '\n' && content_size < 1020) {
+					if (!escaped && *bptr == '"')
+						break;
+					if (escaped) {
+						escaped = false;
+						content[content_size++] = *bptr;
+					}
+					else {
+						if (*bptr == '\\')
+							escaped = true;
+						else
+							content[content_size++] = *bptr;
+					}
+					bptr++;
+				}
+				content[content_size] = 0;
+				folder_path = content;
+			}
+			else if (strncmp(buff, "\"250900\"", 8) == 0) {
+				if (folder_path != "") {
+					game_path = folder_path + "\\steamapps\\common\\The Binding of Isaac Rebirth\\isaac-ng.exe";
+					if (PathFileExistsA(game_path.c_str())) {
+						return game_path;
+					}
+				}
+			}
+		}
+	}
+	return empty_path;
+
+}
+
 const wchar_t* pre_test_files[] = {
 	L"C:\\Program Files (x86)\\Steam\\steamapps\\common\\The Binding of Isaac Rebirth",
 	L"D:\\SteamLibrary\\steamapps\\common\\The Binding of Isaac Rebirth",
@@ -81,11 +162,18 @@ int WinMain(
 	ofn.lpstrTitle = T(L"请选择以撒主程序以释放补丁", L"Please select isaac main program to extract patch", L"아이작 메인 프로그램을 선택해 패치를 적용하세요");
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOREADONLYRETURN | OFN_HIDEREADONLY;
 
-	for (int i = 0; pre_test_files[i]; i++) {
-		if (PathFileExistsW(pre_test_files[i])) {
+	auto pathFromSteam = GuessSteamInstall();
+	if (pathFromSteam.has_value() && pathFromSteam.value().size() < 1024 && 
+		MultiByteToWideChar(CP_ACP, NULL, pathFromSteam->c_str(), pathFromSteam->size(), file, 1024)) {
+		//pass
+	}
+	else {
+		for (int i = 0; pre_test_files[i]; i++) {
 			std::wstring tmp = pre_test_files[i];
 			tmp += L"\\isaac-ng.exe";
-			StrCpyW(file, tmp.c_str());
+			if (PathFileExistsW(tmp.c_str())) {
+				StrCpyW(file, tmp.c_str());
+			}
 		}
 	}
 

@@ -1,0 +1,54 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: MSBuild
+
+on:
+  push:
+    branches: [ "workshop" ]
+    paths-ignore:
+      - '*.txt'
+      - '*.lua'
+  pull_request:
+    branches: [ "workshop" ]
+
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        submodules: 'recursive'
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Setup cmake project
+      run: cmake -B build -G "Visual Studio 17 2022" -A win32
+
+    - name: Build
+      working-directory: build
+      run: msbuild ALL_BUILD.vcxproj -p:Configuration=Release
+    
+    - name: Get Result
+      working-directory: build
+      run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        path: build/output
