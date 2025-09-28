@@ -62,6 +62,41 @@ namespace MCM_CONFIG {
 	}
 }
 
+namespace MCM_CONFIG_KR {
+	bool dubbing = true;
+
+	bool has_config = false;
+
+	void Load() {
+		const wchar_t* p = L"data\\repentance+ korean\\save1.dat";
+		if (!PathFileExistsW(p))
+			p = L"data\\repentance+ korean\\save2.dat";
+		if (!PathFileExistsW(p))
+			p = L"data\\repentance+ korean\\save3.dat";
+		if (PathFileExistsW(p)) {
+			FILE* f = _wfopen(p, L"r");
+			if (!f) return;
+			char buff[4096];
+			auto e = fread_s(buff, 4095, 1, 4095, f);
+			buff[e] = 0;
+
+			for (int i = 0; i + 4 < e; i++) {
+				if (strncmp(&buff[i], "koc", 3) == 0) {
+					char key = buff[i+3];
+					char val = buff[i+4];
+
+					if (key == 'a') {
+						dubbing = val == '1';
+					}
+				}
+			}
+			has_config = true;
+
+			fclose(f);
+		}
+	}
+}
+
 
 bool hasClipboardInformation = 0;
 DWORD lastClipboardInformation = 0;
@@ -423,7 +458,7 @@ void Inject() {
 			T(
 				L"中文加载失败。\n关键功能没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
 				L"Patch failed.\nEssential patch is failed(%d patch succeed, %d essential patch succeed, %d patch failed), your patch program doesn't match the game version, please waiting for update.\nerror log:",
-				L"패치에 실패했습니다.\n메인 패치에 실패했으며(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패), 귀하의 패치 프로그램이 게임 버전과 일치하지 않습니다. 한글패치를 제거하거나 업데이트하세요.\n오류 로그:"
+				L"패치에 실패했습니다.\n메인 패치에 실패했으며(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패), 귀하의 패치 프로그램이 게임 버전과 일치하지 않습니다. 한글패치를 제거하거나 업데이트하세요.\n오류 로그: "
 			),
 			succeedPatchers, failedImportantPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
@@ -434,7 +469,7 @@ void Inject() {
 		wsprintfW(buff, T(
 			L"游戏可以继续，但一部分中文不会显示。\n部分非关键功能没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
 			L"Game could continue, but part of language will not being translated.\nSome not essential patch didn't success(%d succeed, %d failed). your patch program doesn't match the game version, please waiting for update.\nlog:",
-			L"게임은 진행할 수 있지만, 일부 부분이 번역되지 않습니다.\n일부 기능에 대한 패치에 실패했습니다.(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패) 귀하의 패치 프로그램이 게임 버전과 일치하지 않으나 게임은 계쏙 진행할 수 있습니다.\n로그:"),
+			L"게임은 진행할 수 있지만, 일부 부분이 번역되지 않습니다.\n일부 기능에 대한 패치에 실패했습니다.(패치 %d개 성공, 메인 패치 %d개 성공, 패치 %d개 실패) 귀하의 패치 프로그램이 게임 버전과 일치하지 않으나 게임은 계속 진행할 수 있습니다.\n로그:" ),
 			succeedPatchers, failedPatchers);
 		auto errmsg = buff + failedPatcherMessages.str();
 		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁部分加载失败", L"Some patch failed", L"일부 패치 실패"), MB_ICONINFORMATION);
@@ -554,8 +589,22 @@ namespace FileCopy {
 			MessageBoxW(NULL, hint.c_str(), L"中文补丁配置已更新", MB_ICONINFORMATION);
 		}
 	}
+
 	void InstallModFilesKR(std::wstring mod) {
+	
 		CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
+
+		if (MCM_CONFIG_KR::dubbing) {
+			CopyFileFromTo(mod + L"res\\repentance_dub.a.copy", L".\\resources\\packed\\repentance_de.a", L"한국어 더빙 리소스");
+		}
+		else {
+			if (PathFileExistsW(L".\\resources\\packed\\repentance_de.a")) {
+				unlink(".\\resources\\packed\\repentance_de.a");
+				updated = true;
+				us << L"더빙 파일이 제거되었습니다\n";
+			}
+		}
+	
 		if (updated) {
 			std::wstring hint = L"한글패치의 다음 파일이 업데이트됩니다:\n";
 			hint += us.str();
@@ -622,7 +671,7 @@ extern "C" {
 								L"\nYou could remove the following line in 'config.ini' to skip this hint until the mod next update:\n";
 						break;
 						case LANG_KR:
-							output += L"와 패치의 해시가 일치하지 않습니다. 일반적으로 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. 아니오를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
+							output += L"와 패치의 해시가 일치하지 않습니다. 일반적으로 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. '아니오'를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
 								L"주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
 								L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n 구성 파일 " + cfg + L"check=";
 						break;
