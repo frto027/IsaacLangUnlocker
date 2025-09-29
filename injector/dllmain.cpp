@@ -624,7 +624,16 @@ namespace FileCopy {
 
 extern "C" {
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
-		MCM_CONFIG::Load();
+		switch(getLang()){
+			case LANG_KR:
+				MCM_CONFIG_KR::Load();
+				break;
+			case LANG_CN:
+			case LANG_EN:
+			default:
+				MCM_CONFIG::Load();
+				break;
+		}
 
 		std::wstring cfg = modfolder_root;
 		cfg += L"res\\config.ini";
