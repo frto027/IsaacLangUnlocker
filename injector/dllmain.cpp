@@ -28,11 +28,11 @@ namespace MCM_CONFIG {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = L"data\\cn_rep+\\save1.dat";
+		const wchar_t* p = L"..\\data\\rgon_cn_rep+\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\cn_rep+\\save2.dat";
+			p = L"..\\data\\rgon_cn_rep+\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\cn_rep+\\save3.dat";
+			p = L"..\\data\\rgon_cn_rep+\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -68,11 +68,11 @@ namespace MCM_CONFIG_KR {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = L"data\\repentance+ korean\\save1.dat";
+		const wchar_t* p = L"..\\data\\rgon_repentance+ korean\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\repentance+ korean\\save2.dat";
+			p = L"..\\data\\rgon_repentance+ korean\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\repentance+ korean\\save3.dat";
+			p = L"..\\data\\rgon_repentance+ korean\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -688,7 +688,7 @@ extern "C" {
 					_itow(ng_checksum, ascii, 10);
 					output += ascii;
 					output += T(L"”的行", L"", L" 줄을 삭제하세요");
-					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version", L"패치가 게임 버전과 대응되지 않습니다."), MB_ICONINFORMATION | MB_YESNO))
+					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"[RGON]中文补丁不匹配提示", L"[RGON]Patch not matched the game version", L"[RGON]패치가 게임 버전과 대응되지 않습니다."), MB_ICONINFORMATION | MB_YESNO))
 						return;
 				}
 			}

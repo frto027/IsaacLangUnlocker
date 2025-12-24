@@ -119,56 +119,31 @@ bool TryLoad(std::wstring mod_folder) {
 			return true;
 	}
 	if (updated) {
-		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 리포트"), MB_OK);
+		MessageBoxW(NULL, T(L"[忏悔龙]中文模组加载工具已更新", L"[RGON]Language mod loader has been updated", L"[RGON]한글패치 로더가 업데이트되었습니다"), T(L"中文模组报告", L"Language mod report", L"한글패치 리포트"), MB_OK);
 	}
 
 	HMODULE m = LoadLibraryW(tmp);
 	if (!m) {
-		MessageBoxW(NULL,T( L"中文补丁程序inject.dll无法载入", L"Can't load inject.dll", L"inject.dll을 불러올 수 없습니다."), T(L"中文模组加载失败",L"Language mod load failed",L"한글패치 불러오기 실패"), MB_ICONERROR);
+		MessageBoxW(NULL,T( L"[RGON]中文补丁程序inject.dll无法载入", L"[RGON]Can't load inject.dll", L"[RGON]inject.dll을 불러올 수 없습니다."), T(L"中文模组加载失败",L"Language mod load failed",L"한글패치 불러오기 실패"), MB_ICONERROR);
 		return true;
 	}
 
 	auto inject = GetProcAddress(m, "Load");
 	if (!inject) {
-		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found.",L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다."), T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"), MB_ICONERROR);
+		MessageBoxW(NULL, T(L"[RGON]中文补丁程序inject.dll无法载入，找不到Load函数",L"[RGON]Can't load inject.dll, Load function not found.",L"[RGON]inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다."), T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"), MB_ICONERROR);
 		return true;
 	}
 	((void(*)(const wchar_t*))inject)(mod_folder.c_str());
 	return true;
 }
 
-BOOL
-WINAPI
-GetUserProfileDirectoryA(
-	_In_                            HANDLE  hToken,
-	_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
-	_Inout_                         LPDWORD lpcchSize) {
-
-	auto lib = LoadLibraryA("userenv");
-
-	BOOL
-	(WINAPI *OriginalGetUserProfileDirectoryA)(
-		_In_                            HANDLE  hToken,
-		_Out_writes_opt_(*lpcchSize)    LPSTR lpProfileDir,
-		_Inout_                         LPDWORD lpcchSize)
-		= (decltype(OriginalGetUserProfileDirectoryA))GetProcAddress(lib, "GetUserProfileDirectoryA");
+extern "C" __declspec(dllexport) int ModInit() {
 	
 	TryLoad(
-		T(L".\\mods\\cn_rep+_3568677664\\", 
-			L".\\mods\\en_rep+\\",
-			L".\\mods\\repentance+ korean_3371064337\\"
+		T(L"..\\mods\\rgon_cn_rep+_3630337418\\", 
+			L"..\\mods\\rgon_en_rep+\\",
+			L"..\\mods\\rgon_repentance+ korean_3371064337\\"
 		));
-	BOOL ret = false;
-	if(OriginalGetUserProfileDirectoryA){
-		ret = OriginalGetUserProfileDirectoryA(hToken, lpProfileDir, lpcchSize);
-		return ret;
-	}
-
-	MessageBoxW(NULL, T(
-		L"无法加载系统库userenv。如果继续，游戏存档路径将存在异常。建议向补丁开发者报告这件事。是否继续？",
-		L"Can't load system library userenv. If continue, the game save data path will have problem. Please report this things to the mod developer. Continue?",
-		L"시스템 라이브러리 userenv를 불러올 수 없습니다. 계속 진행할 경우 게임 데이터 경로에 문제가 발생할 수 있습니다. 패치 제작자에게 이 문제를 신고해주세요. 계속하시겠습니까?"
-	), T(L"中文补丁错误", L"Patch error", L"패치 오류"), MB_ICONERROR);
 	return false;
 }
 
