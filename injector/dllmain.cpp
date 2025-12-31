@@ -608,7 +608,7 @@ namespace FileCopy {
 
 	void InstallModFilesKR(std::wstring mod) {
 	
-		if(patchConfig.is_rgon){
+		if(patchContext.is_rgon){
 			CopyFileFromTo(mod + L"res\\repentogon_kr.a", L".\\resources\\packed\\repentance_kr.a");
 		}else{
 			CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
