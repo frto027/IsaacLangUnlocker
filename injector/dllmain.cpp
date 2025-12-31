@@ -39,11 +39,11 @@ namespace MCM_CONFIG {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = isRgonMode()? L"..\\data\\cn_rep+\\save1.dat" : L"data\\cn_rep+\\save1.dat";
+		const wchar_t* p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save1.dat" : L"data\\cn_rep+\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode()? L"..\\data\\cn_rep+\\save2.dat" : L"data\\cn_rep+\\save2.dat";
+			p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save2.dat" : L"data\\cn_rep+\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode()? L"..\\data\\cn_rep+\\save3.dat" : L"data\\cn_rep+\\save3.dat";
+			p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save3.dat" : L"data\\cn_rep+\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -369,6 +369,8 @@ void Inject() {
 		FIX_INPUT = false;
 	}
 
+	if(patchContext.is_rgon)
+		FIX_INPUT = false;
 
 	unsigned char* base = (unsigned char*)GetModuleHandleA(NULL);
 	IMAGE_NT_HEADERS* pNtHdr = ImageNtHeader(base);
@@ -573,16 +575,19 @@ namespace FileCopy {
 
 		CopyFileFromTo(mod + L"res\\repentance_zh.a.copy", L".\\resources\\packed\\repentance_zh.a");
 
-		if (MCM_CONFIG::custom_emoji) {
-			CopyFileFromTo(mod + L"res\\repentance_emote.a.copy", L".\\resources\\packed\\repentance_de.a", L"联机表情资源");
-		}
-		else {
-			if (PathFileExistsW(L".\\resources\\packed\\repentance_de.a")) {
-				unlink(".\\resources\\packed\\repentance_de.a");
-				updated = true;
-				us << L"表情文件已移除\n";
+		if(!patchContext.is_rgon){
+			if (MCM_CONFIG::custom_emoji) {
+				CopyFileFromTo(mod + L"res\\repentance_emote.a.copy", L".\\resources\\packed\\repentance_de.a", L"联机表情资源");
+			}
+			else {
+				if (PathFileExistsW(L".\\resources\\packed\\repentance_de.a")) {
+					unlink(".\\resources\\packed\\repentance_de.a");
+					updated = true;
+					us << L"表情文件已移除\n";
+				}
 			}
 		}
+		
 		if (MCM_CONFIG::custom_revive) {
 			CopyFileFromTo(mod + L"res\\repentance_reveive.a.copy", L".\\resources\\packed\\repentance_es.a", L"复活机贴图");
 		}
@@ -603,7 +608,11 @@ namespace FileCopy {
 
 	void InstallModFilesKR(std::wstring mod) {
 	
-		CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
+		if(patchConfig.is_rgon){
+			CopyFileFromTo(mod + L"res\\repentogon_kr.a", L".\\resources\\packed\\repentance_kr.a");
+		}else{
+			CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
+		}
 
 		if (MCM_CONFIG_KR::dubbing) {
 			CopyFileFromTo(mod + L"res\\repentance_dub.a.copy", L".\\resources\\packed\\repentance_de.a", L"한국어 더빙 리소스");
