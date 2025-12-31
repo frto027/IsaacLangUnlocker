@@ -29,11 +29,11 @@ namespace MCM_CONFIG {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save1.dat" : L"data\\cn_rep+\\save1.dat";
+		const wchar_t* p = patchContext.is_rgon ? L"..\\data\\rgon_cn_rep+\\save1.dat" : L"data\\cn_rep+\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save2.dat" : L"data\\cn_rep+\\save2.dat";
+			p = patchContext.is_rgon ? L"..\\data\\rgon_cn_rep+\\save2.dat" : L"data\\cn_rep+\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode()? L"..\\data\\rgon_cn_rep+\\save3.dat" : L"data\\cn_rep+\\save3.dat";
+			p = patchContext.is_rgon ? L"..\\data\\rgon_cn_rep+\\save3.dat" : L"data\\cn_rep+\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -69,11 +69,11 @@ namespace MCM_CONFIG_KR {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = isRgonMode() ? L"..\\data\\repentance+ korean\\save1.dat" : L"data\\repentance+ korean\\save1.dat";
+		const wchar_t* p = patchContext.is_rgon ? L"..\\data\\repentance+ korean\\save1.dat" : L"data\\repentance+ korean\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode() ? L"..\\data\\repentance+ korean\\save2.dat" : L"data\\repentance+ korean\\save2.dat";
+			p = patchContext.is_rgon ? L"..\\data\\repentance+ korean\\save2.dat" : L"data\\repentance+ korean\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode() ? L"..\\data\\repentance+ korean\\save3.dat" : L"data\\repentance+ korean\\save3.dat";
+			p = patchContext.is_rgon ? L"..\\data\\repentance+ korean\\save3.dat" : L"data\\repentance+ korean\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -650,14 +650,19 @@ extern "C" {
 		}
 
 		std::wstring cfg = modfolder_root;
-		cfg += L"res\\config.ini";
+		if (patchContext.is_rgon) {
+			cfg += L"res\\config_rgon.ini";
+		}
+		else {
+			cfg += L"res\\config.ini";
+		}
 		config.Load(cfg.c_str());
 
 		if(getLang() == LANG_CN){
 			patchConfig.Load(cfg.c_str());
 		}else{
-			if(getLang() == LANG_KR && patchContext.is_rgon){
-				patchConfig.Load(PATCHER_PATH L"res\\config_rgon.ini");
+			if(patchContext.is_rgon){
+				patchConfig.Load( "..\\" PATCHER_PATH L"res\\config_rgon.ini");
 			}else{
 				patchConfig.Load(PATCHER_PATH L"res\\config.ini");
 			}

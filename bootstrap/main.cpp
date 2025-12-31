@@ -6,7 +6,7 @@
 #include "../defines.h"
 /*
 
-dsound.dll需要用户自行替换，不进行自动更新。所以不要在这里增加功能。
+bootstp.dll需要用户自行替换，不进行自动更新。所以不要在这里增加功能。
 
 */
 
@@ -117,8 +117,14 @@ bool TryLoad(std::wstring mod_folder) {
 			return true;
 	}
 	else {
-		if (!CopyFileFromTo(PATCHER_PATH L"res\\inject.bin", tmp))
-			return true;
+		if (rgon_mode) {
+			if (!CopyFileFromTo("..\\" PATCHER_PATH L"res\\inject.bin", tmp))
+				return true;
+		}
+		else {
+			if (!CopyFileFromTo(PATCHER_PATH L"res\\inject.bin", tmp))
+				return true;
+		}
 	}
 	if (updated) {
 		MessageBoxW(NULL, T(L"中文模组加载工具已更新", L"Language mod loader has been updated", L"한글패치 로더가 업데이트되었습니다"), 
@@ -136,7 +142,13 @@ bool TryLoad(std::wstring mod_folder) {
 
 	auto inject = GetProcAddress(m, rgon_mode ? "LoadRgon" : "Load");
 	if (!inject) {
-		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found.",L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다."), 
+		MessageBoxW(NULL, 
+			rgon_mode ?
+
+			T(L"中文补丁程序inject.dll无法载入，找不到LoadRgon函数", L"Can't load inject.dll, LoadRgon function not found.", L"inject.dll을 불러올 수 없습니다. LoadRgon 함수를 찾을 수 없습니다.")
+			:T(L"中文补丁程序inject.dll无法载入，找不到Load函数", L"Can't load inject.dll, Load function not found.", L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다.")
+
+			, 
 			rgon_mode ? T(L"[忏悔龙]中文模组加载失败", L"[RGON]Language mod load failed", L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"),
 			MB_ICONERROR);
 		return true;
@@ -150,7 +162,7 @@ extern "C" __declspec(dllexport) int ModInit() {
 	TryLoad(
 		T(L"..\\mods\\rgon_cn_rep+_3630337418\\", 
 			L"..\\mods\\rgon_en_rep+\\",
-			L"..\\mods\\rgon_repentance+ korean_3371064337\\"
+			L"..\\mods\\repentance+ korean_3371064337\\"
 		)
 	);
 	return 0;
