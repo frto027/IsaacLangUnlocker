@@ -41,7 +41,7 @@ You'd notice that the mod loader actually update a dll file from network and run
 
 ### Mod Loader via repentogon
 > [!NOTE]
-> The old mod actually works with rgon natually, without any modification, if you put the userenv.dll to the rgon's game folder and patch the game manually. I just re-designed the mod to make it work in steam workshop.
+> The old chinese mod for `1.9.7.12` game actually works with rgon natually, without any modification, if you put the userenv.dll to the rgon's game folder and patch the game manually. I just re-designed the mod to make it work in steam workshop.
 
 The only changes is that, the repentogon's mod-loader loads our mod-loader, it is cascaded.
 
