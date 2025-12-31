@@ -50,16 +50,27 @@ class I18nUnlock : public Patcher {
 public:
 	virtual void Patch() override{
 		isImportant = true;
-		Name = T(L"中文解锁补丁", L"Korean unlock patch", L"한국어 강제 적용 패치");
-
 		char* it = patchContext.text_beg;
-		while (it < patchContext.text_end) {
-			if (sigmatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it)) {
-				sigpatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it);
-				return;
+		if(patchContext.is_rgon){
+			Name = T(L"[忏悔龙]中文解锁补丁", L"[RGON]Korean unlock patch", L"[RGON]한국어 강제 적용 패치");
+			while (it < patchContext.text_end) {
+				if (sigmatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it)) {
+					sigpatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it);
+					return;
+				}
+				it++;
 			}
-			it++;
+		}else{
+			Name = T(L"中文解锁补丁", L"Korean unlock patch", L"한국어 강제 적용 패치");
+			while (it < patchContext.text_end) {
+				if (sigmatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it)) {
+					sigpatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it);
+					return;
+				}
+				it++;
+			}
 		}
+
 		throw PatchException(T(L"无法解锁语言", L"Can't unlock language", L"한국어를 적용할 수 없습니다"));
 	}
 };
@@ -427,11 +438,19 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 std::vector<Patcher*> patchers;
 
 void InitPatchers() {
-	patchers = {
-		new I18nUnlock(),
-		new IIDTrans(),
-		new IIdLineWidthFix(),
-		new OnlineTextPatcher(),
-		new MinimapTimeLabelFontPatcher(),
-	};
+	if(patchContext.is_rgon){
+		patchers = {
+			new I18nUnlock(),
+		};
+
+	}else{
+		patchers = {
+			new I18nUnlock(),
+			new IIDTrans(),
+			new IIdLineWidthFix(),
+			new OnlineTextPatcher(),
+			new MinimapTimeLabelFontPatcher(),
+		};
+
+	}
 }

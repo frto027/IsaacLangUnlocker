@@ -3,6 +3,8 @@
 struct PatchContext {
 	unsigned char* isaac_ng_base;
 	char* text_beg, * text_end, * data_beg, * data_end;
+
+	bool is_rgon;
 };
 
 struct PatchException {

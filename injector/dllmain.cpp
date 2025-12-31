@@ -20,6 +20,17 @@ Config config;
 
 Config patchConfig;
 
+
+static bool isRgonMode(){
+	return patchContext.is_rgon;
+	// static int result = -1;
+	// if(result == -1){
+		
+	// 	result = PathFileExistsW("zhlREPENTOGON.dll") && !PathFileExistsW("mods");
+	// }
+	// return result;
+}
+
 namespace MCM_CONFIG {
 	bool custom_revive = true;
 	bool custom_emoji = true;
@@ -28,11 +39,11 @@ namespace MCM_CONFIG {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = L"data\\cn_rep+\\save1.dat";
+		const wchar_t* p = isRgonMode()? L"..\\data\\cn_rep+\\save1.dat" : L"data\\cn_rep+\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\cn_rep+\\save2.dat";
+			p = isRgonMode()? L"..\\data\\cn_rep+\\save2.dat" : L"data\\cn_rep+\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\cn_rep+\\save3.dat";
+			p = isRgonMode()? L"..\\data\\cn_rep+\\save3.dat" : L"data\\cn_rep+\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -68,11 +79,11 @@ namespace MCM_CONFIG_KR {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = L"data\\repentance+ korean\\save1.dat";
+		const wchar_t* p = isRgonMode() ? "..\\data\\repentance+ korean\\save1.dat" : L"data\\repentance+ korean\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\repentance+ korean\\save2.dat";
+			p = isRgonMode() ? "..\\data\\repentance+ korean\\save2.dat" : L"data\\repentance+ korean\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = L"data\\repentance+ korean\\save3.dat";
+			p = isRgonMode() ? "..\\data\\repentance+ korean\\save3.dat" : L"data\\repentance+ korean\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -623,7 +634,15 @@ namespace FileCopy {
 
 
 extern "C" {
+	__declspec(dllexport) void LoadRgon(const wchar_t* modfolder_root){
+		patchContext.is_rgon = true;
+		Load(modfolder_root);
+	}
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
+		// in rgon mode, the mod folder is always "..\\mods\\xxx"
+		// if(modfolder_root[0] == '.' && mod_folder[1] == '.' && mod_folder[2] == '\\')
+		// 	is_rgon = true;
+
 		switch(getLang()){
 			case LANG_KR:
 				MCM_CONFIG_KR::Load();

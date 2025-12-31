@@ -52,3 +52,10 @@ add_executable(patcher WIN32 exe_patcher/main.cpp ${GENERATED_RES})
 
 target_link_libraries(patcher Comdlg32.lib Shlwapi.lib)
 target_include_directories(patcher PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+######### exe patcher rgon #########
+
+add_executable(patcher_rgon WIN32 exe_patcher_rgon/main.cpp ${GENERATED_RES})
+
+target_link_libraries(patcher_rgon Comdlg32.lib Shlwapi.lib)
+target_include_directories(patcher_rgon PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

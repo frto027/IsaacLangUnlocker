@@ -10,11 +10,11 @@ static int getLang(){
 	static int result = -1;
 	if(result == -1){
 		// if we are in the game folder, determine the language with the mod that player subscribe
-		if(PathFileExistsW(L".\\mods\\cn_rep+_3568677664\\")){
+		if(PathFileExistsW(L".\\mods\\cn_rep+_3568677664\\") || PathFileExistsW(L"..\\mods\\cn_rep+_3568677664\\")){
 			result = LANG_CN;
-		}else if(PathFileExistsW(L".\\mods\\en_rep+\\")){
+		}else if(PathFileExistsW(L".\\mods\\en_rep+\\") || PathFileExistsW(L"..\\mods\\en_rep+\\")){
 			result = LANG_EN;
-		}else if(PathFileExistsW(L".\\mods\\repentance+ korean_3371064337\\")){
+		}else if(PathFileExistsW(L".\\mods\\repentance+ korean_3371064337\\") || PathFileExistsW(L"..\\mods\\repentance+ korean_3371064337\\")){
 			result = LANG_KR;
 		}
 		else {

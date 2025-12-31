@@ -47,7 +47,7 @@ jobs:
     
     - name: Get Result
       working-directory: build
-      run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe
+      run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe && copy Release\patcher_rgon.exe output\patcher_rgon.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
