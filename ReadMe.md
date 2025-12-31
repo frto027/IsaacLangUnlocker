@@ -18,7 +18,7 @@ Please understand we did many code designs to make you feel comfortable. We were
 
 DLL mods are intresting. It's intresting that you can do everythings inside the game. But it's not intresting because mod developers can do everything including something bad. And most mod developers can't do anything good because they don't know how to code the game. C/CPP language is hard. It's a complete mess for beginners.
 
-**This is a DAMOCLES.** I would say that many games give mod developers a great deal of system privileges. You can develop dll mod in any unity game or java game, including slay the spire, minecraft, celeste, beat saber... But why not the isaac game when needed?
+**This is a DAMOCLES.** I would say that many games give mod developers a great deal of system privileges. You can develop dll/jar mod in any unity game or java game, including slay the spire, minecraft, celeste, beat saber... But why not the isaac game when needed?
 
 > [!TIP]
 > If this mod is flagged as a virus by your antivirus software, you can contact me. I will contact the antivirus software vendor manually, and provide the sample to prove its innocence. Please understand that I have paid my time to this project, but I will not spend money to purchase certificates for this project to prove the innocence.
