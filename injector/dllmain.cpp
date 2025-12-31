@@ -79,11 +79,11 @@ namespace MCM_CONFIG_KR {
 	bool has_config = false;
 
 	void Load() {
-		const wchar_t* p = isRgonMode() ? "..\\data\\repentance+ korean\\save1.dat" : L"data\\repentance+ korean\\save1.dat";
+		const wchar_t* p = isRgonMode() ? L"..\\data\\repentance+ korean\\save1.dat" : L"data\\repentance+ korean\\save1.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode() ? "..\\data\\repentance+ korean\\save2.dat" : L"data\\repentance+ korean\\save2.dat";
+			p = isRgonMode() ? L"..\\data\\repentance+ korean\\save2.dat" : L"data\\repentance+ korean\\save2.dat";
 		if (!PathFileExistsW(p))
-			p = isRgonMode() ? "..\\data\\repentance+ korean\\save3.dat" : L"data\\repentance+ korean\\save3.dat";
+			p = isRgonMode() ? L"..\\data\\repentance+ korean\\save3.dat" : L"data\\repentance+ korean\\save3.dat";
 		if (PathFileExistsW(p)) {
 			FILE* f = _wfopen(p, L"r");
 			if (!f) return;
@@ -629,19 +629,15 @@ namespace FileCopy {
 			case LANG_KR: return InstallModFilesKR(mod);
 		}
 	}
-
 }
 
 
 extern "C" {
-	__declspec(dllexport) void LoadRgon(const wchar_t* modfolder_root){
-		patchContext.is_rgon = true;
-		Load(modfolder_root);
-	}
+	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
 		// in rgon mode, the mod folder is always "..\\mods\\xxx"
-		// if(modfolder_root[0] == '.' && mod_folder[1] == '.' && mod_folder[2] == '\\')
-		// 	is_rgon = true;
+		if(modfolder_root[0] == '.' && mod_folder[1] == '.' && mod_folder[2] == '\\')
+			is_rgon = true;
 
 		switch(getLang()){
 			case LANG_KR:
@@ -717,6 +713,12 @@ extern "C" {
 			FileCopy::InstallModFiles(modfolder_root);
 		}
 		Inject();
+	}
+
+	//latest will use this function for rgon mod loader
+	__declspec(dllexport) void LoadRgon(const wchar_t* modfolder_root){
+		patchContext.is_rgon = true;
+		Load(modfolder_root);
 	}
 }
 

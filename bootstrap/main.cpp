@@ -134,7 +134,7 @@ bool TryLoad(std::wstring mod_folder) {
 		return true;
 	}
 
-	auto inject = GetProcAddress(m, "Load");
+	auto inject = GetProcAddress(m, rgon_mode ? "LoadRgon" : "Load");
 	if (!inject) {
 		MessageBoxW(NULL, T(L"中文补丁程序inject.dll无法载入，找不到Load函数",L"Can't load inject.dll, Load function not found.",L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다."), 
 			rgon_mode ? T(L"[忏悔龙]中文模组加载失败", L"[RGON]Language mod load failed", L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"),
@@ -152,7 +152,7 @@ extern "C" __declspec(dllexport) int ModInit() {
 			L"..\\mods\\rgon_en_rep+\\",
 			L"..\\mods\\rgon_repentance+ korean_3371064337\\"
 		)
-	)
+	);
 	return 0;
 }
 
