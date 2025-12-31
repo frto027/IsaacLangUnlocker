@@ -21,16 +21,6 @@ Config config;
 Config patchConfig;
 
 
-static bool isRgonMode(){
-	return patchContext.is_rgon;
-	// static int result = -1;
-	// if(result == -1){
-		
-	// 	result = PathFileExistsW("zhlREPENTOGON.dll") && !PathFileExistsW("mods");
-	// }
-	// return result;
-}
-
 namespace MCM_CONFIG {
 	bool custom_revive = true;
 	bool custom_emoji = true;
@@ -666,7 +656,11 @@ extern "C" {
 		if(getLang() == LANG_CN){
 			patchConfig.Load(cfg.c_str());
 		}else{
-			patchConfig.Load(PATCHER_PATH L"res\\config.ini");
+			if(getLang() == LANG_KR && patchContext.is_rgon){
+				patchConfig.Load(PATCHER_PATH L"res\\config_rgon.ini");
+			}else{
+				patchConfig.Load(PATCHER_PATH L"res\\config.ini");
+			}
 		}
 
 		int ng_checksum = config.GetOrDefaultInt("isaac", "check");
