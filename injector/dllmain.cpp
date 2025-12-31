@@ -636,8 +636,8 @@ extern "C" {
 	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
 		// in rgon mode, the mod folder is always "..\\mods\\xxx"
-		if(modfolder_root[0] == '.' && mod_folder[1] == '.' && mod_folder[2] == '\\')
-			is_rgon = true;
+		if(modfolder_root[0] == '.' && modfolder_root[1] == '.' && modfolder_root[2] == '\\')
+			patchContext.is_rgon = true;
 
 		switch(getLang()){
 			case LANG_KR:
