@@ -206,7 +206,7 @@ int WinMain(
 		return 0;
 	}
 
-	MessageBoxW(NULL, T(L"补丁成功", L"patch success", L"패치 성공", T(L"[RGON] 中文补丁报告", L"[RGON] LangHack report", L"[RGON] 한글패치 리포트"), MB_ICONINFORMATION);
+	MessageBoxW(NULL, T(L"补丁成功", L"patch success", L"패치 성공"), T(L"[RGON] 中文补丁报告", L"[RGON] LangHack report", L"[RGON] 한글패치 리포트"), MB_ICONINFORMATION);
 
 	return 0;
 }
