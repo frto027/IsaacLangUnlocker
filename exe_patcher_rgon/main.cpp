@@ -159,7 +159,7 @@ int WinMain(
 	);
 	ofn.nFilterIndex = 2;
 	ofn.lpstrFileTitle = NULL;
-	ofn.lpstrTitle = T(L"[忏悔龙]请选择以撒主程序以释放补丁", L"[RGON]Please select isaac main program to extract patch.", L"[RGON]아이작 메인 프로그램을 선택해 패치를 적용하세요");
+	ofn.lpstrTitle = T(L"[忏悔龙]请选择以撒主程序以释放补丁", L"[RGON] Please select isaac main program to extract patch.", L"[RGON] 아이작 메인 프로그램을 선택해 패치를 적용하세요");
 	ofn.Flags = OFN_FILEMUSTEXIST | OFN_NOREADONLYRETURN | OFN_HIDEREADONLY;
 
 	auto pathFromSteam = GuessSteamInstall();
@@ -185,7 +185,7 @@ int WinMain(
 		MessageBoxW(NULL, T(
 			L"即将选择【原版】以撒主程序isaac-ng.exe以注入补丁，是否继续？",
 			L"Will select [vanilla] isaac-ng to inject patch, continue?",
-			L"아이작 메인 프로그램 isaac-ng.exe에 패치를 주입하려 합니다. 진행하시겠습니까?"), T(L"【仅忏悔龙/RGON】询问", L"[RGON Only]Query", L"[RGON Only]안내"), MB_YESNO) == IDNO ||
+			L"아이작 메인 프로그램 isaac-ng.exe(바닐라)에 패치를 주입하려 합니다. 진행하시겠습니까?"), T(L"【仅忏悔龙/RGON】询问", L"[RGON Only] Query", L"[RGON Only] 안내"), MB_YESNO) == IDNO ||
 		!GetOpenFileNameW(&ofn))
 	{
 		MessageBoxW(NULL, T(L"补丁已取消",L"Patch has been canceled",L"패치가 취소되었습니다"), T(L"中文补丁", L"Language mod patch", L"한글패치"), MB_ICONINFORMATION);
@@ -202,11 +202,11 @@ int WinMain(
 			L"无法释放zhlLangHack.dll文件，游戏文件未发生变更，补丁程序已退出。",
 			L"Can't extract zhlLangHack.dll, nothing was patched, patcher has been exit.",
 			L"zhlLangHack.dll을 추출할 수 없습니다. 게임 파일은 변경되지 않았습니다. 패쳐가 종료되었습니다."
-		), T(L"[忏悔龙]中文补丁错误", L"[RGON]Patch error", L"[RGON]패치 오류"), MB_ICONERROR);
+		), T(L"[忏悔龙]中文补丁错误", L"[RGON] Patch error", L"[RGON] 패치 오류"), MB_ICONERROR);
 		return 0;
 	}
 
-	MessageBoxW(NULL, T(L"补丁成功", L"patch success"), T(L"[RGON]中文补丁报告", L"[RGON]LangHack report"), MB_ICONINFORMATION);
+	MessageBoxW(NULL, T(L"补丁成功", L"patch success", L"패치 성공", T(L"[RGON] 中文补丁报告", L"[RGON] LangHack report", L"[RGON] 한글패치 리포트"), MB_ICONINFORMATION);
 
 	return 0;
 }

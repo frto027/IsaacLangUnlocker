@@ -52,7 +52,7 @@ public:
 		isImportant = true;
 		char* it = patchContext.text_beg;
 		if(patchContext.is_rgon){
-			Name = T(L"[忏悔龙]中文解锁补丁", L"[RGON]Korean unlock patch", L"[RGON]한국어 강제 적용 패치");
+			Name = T(L"[忏悔龙]中文解锁补丁", L"[RGON] Korean unlock patch", L"[RGON] 한국어 강제 적용 패치");
 			while (it < patchContext.text_end) {
 				if (sigmatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it)) {
 					sigpatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it);

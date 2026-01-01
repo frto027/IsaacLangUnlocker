@@ -555,7 +555,7 @@ namespace FileCopy {
 			}
 			if (in) fclose(in);
 			if (out) fclose(out);
-			us << hint_prefix << T(L"文件:",L"file ",L"파일 ") << to << T(L"已更新\n",L" has been updated\n",L" 업데이트됨\n");
+			us << hint_prefix << T(L"文件:",L"file ",L" 파일 ") << to << T(L"已更新\n",L" has been updated\n",L" 업데이트됨\n");
 			updated = true;
 		}
 		return true;
@@ -599,9 +599,9 @@ namespace FileCopy {
 	void InstallModFilesKR(std::wstring mod) {
 	
 		if(patchContext.is_rgon){
-			CopyFileFromTo(mod + L"res\\repentogon_kr.a", L".\\resources\\packed\\repentance_kr.a");
+			CopyFileFromTo(mod + L"res\\repentogon_kr.a", L".\\resources\\packed\\repentance_kr.a", L"RGON 한국어 리소스");
 		}else{
-			CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a");
+			CopyFileFromTo(mod + L"res\\repentance_kr.a.copy", L".\\resources\\packed\\repentance_kr.a", L"한국어 리소스");
 		}
 
 		if (MCM_CONFIG_KR::dubbing) {

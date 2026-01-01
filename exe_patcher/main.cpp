@@ -123,7 +123,7 @@ bool extract_userenv(wchar_t* isaac_ng_path) {
 				L"게임이 실행 중인지, 디스크 공간이 충분한지, 바이러스 백신 소프트웨어가 차단하고 있지 않은지 확인해 주세요.")
 			,
 			T(L"无法写入文件bootstp.dll",
-				L"TRANSPATE_ME",
+				L"Failed to write to the bootstp.dll",
 				L"bootstp.dll 파일 쓰기 실패")
 			, MB_ICONERROR);
 		return false;
@@ -265,8 +265,8 @@ int WinMain(
 	}
 	else if (found_after) {
 		if (extract_userenv(file)) {
-			MessageBoxW(NULL, T(L"exe文件已经补丁过，无需修改。已重新释放bootstp.dll文件。",\
-								L"The exe has already been patched, no need patch. bootstp.dll has been extracted."
+			MessageBoxW(NULL, T(L"exe文件已经补丁过，无需修改。已重新释放bootstp.dll文件。",
+								L"The exe has already been patched, no need patch. bootstp.dll has been extracted.",
 								L"exe 파일은 이미 패치되어있으며, bootstp.dll 파일이 이미 추출되었습니다."),T( L"中文补丁", L"Language patch", L"한글패치"), MB_ICONINFORMATION);
 		}
 		else {
