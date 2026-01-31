@@ -435,12 +435,31 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 	}
 };
 
+class MinimapTimeLabelFontPatcherRgon : public Patcher {
+	void Patch() {
+		Name = T(L"[RGON]小地图时间字体", L"[RGON]Minimap Font patch");
+
+		//if (getLang() != LANG_KR) return;
+		if (config.GetOrDefault("option", "noMinimapFontFix", "0") == "1")
+			return;
+
+		// #MINIMAP_TIME_LABEL 参考上面非Regon的版本
+		unsigned char* jmp = 0x0966704 - IDA_BASE + patchContext.isaac_ng_base;
+		if (jmp[0] != 0x75 || jmp[1] != 0x0C) {
+			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location"));
+		}
+		// nop the jmp
+		jmp[0] = 0x90;
+		jmp[1] = 0x90;
+	}
+};
 std::vector<Patcher*> patchers;
 
 void InitPatchers() {
 	if(patchContext.is_rgon){
 		patchers = {
 			new I18nUnlock(),
+			new MinimapTimeLabelFontPatcherRgon()
 		};
 
 	}else{
