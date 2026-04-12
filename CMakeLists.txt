@@ -18,7 +18,7 @@ add_library(inject SHARED
     injector/patchers.cpp
 )
 target_link_libraries(inject
-    dbghelp.lib Winmm.lib Shlwapi.lib Zydis
+    dbghelp.lib Winmm.lib Shlwapi.lib Zydis Imm32.lib
 )
 
 ########## bootstrap #########

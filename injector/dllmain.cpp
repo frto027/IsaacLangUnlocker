@@ -260,6 +260,23 @@ HookedDispatchMessageW(
 			break;
 		}
 	}
+	else if (lpMsg->message == WM_IME_COMPOSITION) {
+
+		HIMC hIMC = ImmGetContext(lpMsg->hwnd);
+		if (hIMC) {
+			// Set composition window position near caret position
+			RECT rect;
+			if (GetWindowRect(lpMsg->hwnd, &rect)) {
+				COMPOSITIONFORM Composition;
+				Composition.dwStyle = CFS_POINT;
+				Composition.ptCurrentPos.x = (long)((float)(rect.right - rect.left) * 0.4576);
+				Composition.ptCurrentPos.y = (long)((float)(rect.bottom - rect.top) * 0.722);
+
+				ImmSetCompositionWindow(hIMC, &Composition);
+			}
+			ImmReleaseContext(lpMsg->hwnd, hIMC);
+		}
+	}
 	
 	return DispatchMessageA(lpMsg);
 }
