@@ -107,8 +107,8 @@ HWND cancelKeyDownHwnd = 0;
 DWORD lastCancelKeyDownTime = 0;
 void CheckCancelKeyDown() {
 	if (cancelKeyDownHwnd && timeGetTime() - lastCancelKeyDownTime > 2 * 1000 / 60) {
-		SendMessageA(cancelKeyDownHwnd, WM_KEYUP, 'V', 0);
-		SendMessageA(cancelKeyDownHwnd, WM_KEYUP, VK_CONTROL, 0);
+		SendMessageW(cancelKeyDownHwnd, WM_KEYUP, 'V', 0xC0000001);
+		SendMessageW(cancelKeyDownHwnd, WM_KEYUP, VK_CONTROL, 0xC0000001);
 		cancelKeyDownHwnd = 0;
 	}
 }
@@ -124,6 +124,7 @@ bool doesWeHasClipboardInformation() {
 	return hasClipboardInformation;
 }
 
+HANDLE LastGetClipboardDataResult = 0;
 
 HANDLE
 WINAPI
@@ -132,7 +133,7 @@ HookedGetClipboardData(
 	if (doesWeHasClipboardInformation()) {
 		return (HANDLE)1;
 	}
-	return GetClipboardData(uFormat);
+	return LastGetClipboardDataResult = GetClipboardData(uFormat);
 }
 
 BOOL
@@ -145,6 +146,7 @@ HookedGlobalUnlock(
 		memset(clipboardBytes, 0, sizeof(clipboardBytes));
 		return TRUE;
 	}
+
 	return GlobalUnlock(hMem);
 }
 
@@ -153,9 +155,24 @@ WINAPI
 HookedGlobalLock(
 	_In_ HGLOBAL hMem
 ) {
+	static char output[2048];
 	if (doesWeHasClipboardInformation() && hMem == (HGLOBAL)1) {
-		return clipboardBytes;
+		WideCharToMultiByte(CP_UTF8, 0, clipboardBytes, -1, output, sizeof(output), NULL, NULL);
+		return output;
 	}
+
+	if (hMem == LastGetClipboardDataResult && GetACP() != 65001) {
+		// convert the system clipboard data to utf8 format
+		auto ret = GlobalLock(hMem);
+		if (ret == NULL) return ret;
+		static wchar_t tmp[2048];
+		if (MultiByteToWideChar(CP_ACP, 0, (char*)ret, -1, tmp, 2046) == 0)
+			return ret;
+		if (WideCharToMultiByte(CP_UTF8, 0, tmp, -1, output, sizeof(output), NULL, NULL) == 0)
+			return ret;
+		return output;
+	}
+
 	return GlobalLock(hMem);
 }
 
@@ -173,8 +190,8 @@ void SendCharViaClipboard(HWND hwnd, wchar_t w) {
 	if (!doesWeHasClipboardInformation()) {
 		hasClipboardInformation = true;
 		lastClipboardInformation = timeGetTime();
-		SendMessageA(hwnd, WM_KEYDOWN, VK_CONTROL, 0);
-		SendMessageA(hwnd, WM_KEYDOWN, 'V', 0);
+		SendMessageW(hwnd, WM_KEYDOWN, VK_CONTROL, 0);
+		SendMessageW(hwnd, WM_KEYDOWN, 'V', 0);
 		cancelKeyDownHwnd = hwnd;
 		lastCancelKeyDownTime = timeGetTime();
 	}
@@ -204,8 +221,9 @@ bool handleInputDBCS(const MSG* msg) {
 /* fix the chinese input bug via dispatch message */
 LRESULT
 WINAPI
-HookedDispatchMessageA(
+HookedDispatchMessageW(
 	_In_ CONST MSG* lpMsg) {
+
 	CheckCancelKeyDown();
 	static bool isPressed[26];
 	if (lpMsg->message == WM_KEYDOWN) {
@@ -224,8 +242,11 @@ HookedDispatchMessageA(
 		case 936: //gb2312			Chinese Simplified
 		case 949: //ks_c_5601-1987	Korean
 		case 950: //big5			Chinese Traditional
-			if (handleInputDBCS(lpMsg))
+		case 65001:
+			if (lpMsg->wParam & ~0xFF) {
+				SendCharViaClipboard(lpMsg->hwnd, lpMsg->wParam);
 				return true;
+			}
 			if (
 				(lpMsg->wParam >= 'A' && lpMsg->wParam <= 'Z' && !isPressed[lpMsg->wParam - 'A']) ||
 				(lpMsg->wParam >= 'a' && lpMsg->wParam <= 'z' && !isPressed[lpMsg->wParam - 'a'])
@@ -233,6 +254,8 @@ HookedDispatchMessageA(
 				SendCharViaClipboard(lpMsg->hwnd, lpMsg->wParam);
 				return true;
 			}
+			break;
+
 		default:
 			break;
 		}
@@ -325,7 +348,7 @@ void Inject() {
 
 	std::map<void*, void*> replaceTask{
 		//{CreateWindowExA, HookedCreateWindowExA},
-		{DispatchMessageA, HookedDispatchMessageA},
+		{DispatchMessageW, HookedDispatchMessageW},
 		{GetClipboardData, HookedGetClipboardData},
 		{GlobalLock, HookedGlobalLock},
 		{GlobalUnlock, HookedGlobalUnlock},
