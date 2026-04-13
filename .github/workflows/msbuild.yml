@@ -29,8 +29,6 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      id-token: write
     steps:
     - uses: actions/checkout@v5
       with:
@@ -49,10 +47,7 @@ jobs:
     - name: Get Result
       working-directory: build
       run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe && copy Release\patcher_rgon.exe output\patcher_rgon.exe
-    - uses: sigstore/gh-action-sigstore-python@v3.3.0
-      with:
-        inputs: build/output/inject.bin build/output/patcher.exe build/output/patcher_rgon.exe
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         path: build/output
