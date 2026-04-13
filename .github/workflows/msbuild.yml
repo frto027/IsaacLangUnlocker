@@ -13,6 +13,12 @@ on:
       - '*.lua'
   pull_request:
     branches: [ "workshop" ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1)'
+        required: true
+        type: string
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -51,3 +57,23 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         path: build/output
+  release:
+    needs: build
+    runs-on: windows-latest
+    # Only runs when manually triggered
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write      # create GitHub Release
+      id-token: write      # attestation OIDC
+      attestations: write  # store attestation
+ 
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: build-output
+          path: output
+      - name: Attest
+        uses: actions/attest@v4
+        with:
+          subject-path: '${{ github.workspace }}/output'
