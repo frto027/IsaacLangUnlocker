@@ -7,7 +7,7 @@
 ## How you trust my mod
 
 - Open Source. The source is not harmful.
-- **Working In Progress** The binary you get from steam workshop will match [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), which is built by github instead of me.
+- **Working In Progress** The binary you get from steam workshop will match [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), which shows it is built by github instead of me.
 
 
 ## Message from author
