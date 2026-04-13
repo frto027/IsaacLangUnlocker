@@ -1,5 +1,15 @@
 ﻿use cmake with win32 config to generate vs project
 
+## 你如何相信这个mod是安全的
+
+- 信我就行
+
+## How you trust my mod
+
+- Open Source. The source is not harmful.
+- **Working In Progress** The binary you get from steam workshop will match [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), which is built by github instead of me.
+
+
 ## Message from author
 
 This sloppy project can be used to enable isaac's localization feature, which was disabled in the rep+ beta test.
