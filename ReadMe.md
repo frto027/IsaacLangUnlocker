@@ -4,11 +4,10 @@
 
 - 信我就行
 
-## How you trust my mod
+## Why This Mod Is Not a Virus
 
-- Open Source. The source is not harmful.
-- **Working In Progress** Safe nature from the open source community. The binary you get from steam workshop will match [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), which shows it is built by github instead of from my machine. The github workflow of this project has no script download behavior. If you trust microsoft and github, this will be safe for you.
-
+- **Open Source** — The source code is publicly available and contains nothing harmful.
+- **Verified by Attestation** — (This is **Work In Progress**, will be avaliable in next release.) Because this is open source, the build process is public and transparent. The binary downloaded from the Steam Workshop can be verified via [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), confirming it was built directly from GitHub rather than from my local machine. The GitHub Actions workflow includes no external script downloads. **If you trust Microsoft and GitHub, this mod is safe to use.**
 
 ## Message from author
 
