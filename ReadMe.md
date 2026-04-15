@@ -9,7 +9,7 @@
 TLDR: If you trust Github and Microsoft, then you can easily verify the mod from steam workshop is released with a harmless source code. [By Github Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations),
 
 - **Open Source** — The source code is publicly available and contains nothing harmful.
-- **Verified by Attestation** — (This is **Work In Progress**, will be avaliable in next release.) Because this is open source, the build process is public and transparent. The binary downloaded from the Steam Workshop can be verified via [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), confirming it was built directly from GitHub rather than from my local machine. The GitHub Actions workflow includes no external script downloads. **If you trust Microsoft and GitHub, this mod is safe to use.**
+- **Verified by Attestation** — Because this is open source, the build process is public and transparent. The binary downloaded from the Steam Workshop can be verified via [Attestation](https://github.com/frto027/IsaacLangUnlocker/attestations), confirming it was built directly from GitHub rather than from my local machine. The GitHub Actions workflow includes no external script downloads. **If you trust Microsoft and GitHub, this mod is safe to use.**
 - **Risk Remains** - Actually the previous way only prove the code I released is safe, but not saying the code that I future release will be safe. So you need trust me that never release a malware in the future, or you just don't click "yes" when ask for update.
 
 ## Message from author
