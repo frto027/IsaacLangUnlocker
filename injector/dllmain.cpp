@@ -133,7 +133,11 @@ HookedGetClipboardData(
 	if (doesWeHasClipboardInformation()) {
 		return (HANDLE)1;
 	}
-	return LastGetClipboardDataResult = GetClipboardData(uFormat);
+	if (uFormat != CF_UNICODETEXT) {
+		return LastGetClipboardDataResult = GetClipboardData(uFormat);
+	}
+	LastGetClipboardDataResult = 0;
+	return GetClipboardData(uFormat);
 }
 
 BOOL
@@ -170,6 +174,7 @@ HookedGlobalLock(
 			return ret;
 		if (WideCharToMultiByte(CP_UTF8, 0, tmp, -1, output, sizeof(output), NULL, NULL) == 0)
 			return ret;
+		LastGetClipboardDataResult = 0;
 		return output;
 	}
 
