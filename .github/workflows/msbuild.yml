@@ -6,9 +6,11 @@ on:
     paths-ignore:
       - '*.txt'
       - '*.lua'
+      - '*.md'
   pull_request:
     branches: [ "workshop" ]
-
+  workflow_dispatch:
+  
 env:
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: .
@@ -49,6 +51,7 @@ jobs:
       run: mkdir output && copy Release\inject.dll output\inject.bin && copy Release\patcher.exe output\patcher.exe && copy Release\patcher_rgon.exe output\patcher_rgon.exe
     
     - name: Attest
+      if: github.event_name == 'workflow_dispatch'
       uses: actions/attest@v4
       with:
         subject-path: 'build/output'
