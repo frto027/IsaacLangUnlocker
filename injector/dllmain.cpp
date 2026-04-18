@@ -403,14 +403,16 @@ HookedGetTempPathA(
 		return ret;
 
 	wchar_t tmp[4096];
-	if (0 == MultiByteToWideChar(CP_ACP, 0, lpBuffer, ret, tmp, 4096)) {
+	size_t tmp_len = MultiByteToWideChar(CP_ACP, 0, lpBuffer, ret, tmp, 4096);
+	if (tmp_len == 0) {
 		return ret;
 	}
 	char tmp2[4096];
-	auto cret = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, tmp2, 4096, NULL, NULL);
-	if (cret == 0) {
+	auto cret = WideCharToMultiByte(CP_UTF8, 0, tmp, tmp_len, tmp2, 4096, NULL, NULL);
+	if (cret == 0 || cret >= nBufferLength) {
 		return ret;
 	}
+	tmp2[cret] = '\0';
 	memcpy_s(lpBuffer, nBufferLength, tmp2, cret);
 	return cret;
 }
