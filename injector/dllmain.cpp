@@ -12,6 +12,7 @@
 #include <sstream>
 #include <Shlwapi.h>
 #include <optional>
+#include <intrin.h>
 #include "../lang.h"
 #include "../defines.h"
 
@@ -364,6 +365,55 @@ int CheckSumForGameResources() {
 #include <list>
 
 
+DWORD
+WINAPI
+HookedGetTempPathA(
+	_In_ DWORD nBufferLength,
+	_Out_writes_to_opt_(nBufferLength, return +1) LPSTR lpBuffer
+) {
+	auto ret = GetTempPathA(nBufferLength, lpBuffer);
+
+	char* ret_addr = (char*)_ReturnAddress();
+	if (ret_addr > patchContext.text_beg && ret_addr < patchContext.text_end) {
+		auto offset = (unsigned char*)ret_addr - patchContext.isaac_ng_base;
+
+		if (offset != 6683585) {
+			// 这是一个版本无关补丁，但为了最小化危害，我们将影响范围只限定在唯一的caller上。
+			//char buff[10];
+			//itoa(offset, buff, 10);
+			//MessageBox(NULL, buff, buff, 0);
+
+			return ret;
+		}
+		else {
+			// do things
+		}
+	}
+	else {
+		return ret;
+	}
+
+	if (GetACP() == 65001)
+		return ret;
+
+	if (ret == 0) {
+		return ret;
+	}
+	if (lpBuffer == nullptr)
+		return ret;
+
+	wchar_t tmp[4096];
+	if (0 == MultiByteToWideChar(CP_ACP, 0, lpBuffer, ret, tmp, 4096)) {
+		return ret;
+	}
+	char tmp2[4096];
+	auto cret = WideCharToMultiByte(CP_UTF8, 0, tmp, -1, tmp2, 4096, NULL, NULL);
+	if (cret == 0) {
+		return ret;
+	}
+	memcpy_s(lpBuffer, nBufferLength, tmp2, cret);
+	return cret;
+}
 
 
 void Inject() {
@@ -374,6 +424,7 @@ void Inject() {
 		{GetClipboardData, HookedGetClipboardData},
 		{GlobalLock, HookedGlobalLock},
 		{GlobalUnlock, HookedGlobalUnlock},
+		{GetTempPathA, HookedGetTempPathA}
 		//{GetAsyncKeyState, HookedGetAsyncKeyState},
 		//{SwapBuffers, HookedSwapBuffers},
 	};
