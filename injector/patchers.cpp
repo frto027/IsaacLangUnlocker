@@ -54,7 +54,7 @@ public:
 		isImportant = true;
 		char* it = patchContext.text_beg;
 		if(patchContext.is_rgon){
-			Name = T(L"[忏悔龙]中文解锁补丁", L"[RGON] Korean unlock patch", L"[RGON] 한국어 강제 적용 패치");
+			Name = T(L"[忏悔龙]中文解锁补丁", L"[RGON] Korean unlock patch", L"[RGON] 한국어 강제 설정 패치");
 			while (it < patchContext.text_end) {
 				if (sigmatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it)) {
 					sigpatch(signature_ver_1_9_7_11, sizeof(signature_ver_1_9_7_11) - 1, it);
@@ -63,7 +63,7 @@ public:
 				it++;
 			}
 		}else{
-			Name = T(L"中文解锁补丁", L"Korean unlock patch", L"한국어 강제 적용 패치");
+			Name = T(L"中文解锁补丁", L"Korean unlock patch", L"한국어 강제 설정 패치");
 			while (it < patchContext.text_end) {
 				if (sigmatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it)) {
 					sigpatch(USING_SIGNATURE, sizeof(USING_SIGNATURE) - 1, it);
@@ -73,7 +73,7 @@ public:
 			}
 		}
 
-		throw PatchException(T(L"无法解锁语言", L"Can't unlock language", L"한국어를 적용할 수 없습니다"));
+		throw PatchException(T(L"无法解锁语言", L"Can't unlock language", L"언어 설정을 언락할 수 없습니다"));
 	}
 };
 
@@ -159,7 +159,7 @@ class IIDTrans : public Patcher {
 	};
 
 	virtual void Patch() override{
-		Name = L"内置图鉴补丁";
+		Name = T(L"内置图鉴补丁", L"IID patch", L"내부 아이템 설명 패치");
         int prop_render_patched_count = 0;
         int prop_render_excepted_patch_count = 12; // 这个变量是以iid_proprender为callee的call指令hook次数（预期），用于检测补丁过时
 
@@ -238,7 +238,7 @@ class IIDTrans : public Patcher {
 		for (auto& f : strReplaceTasksFunc) {
 			for (auto& tsk : f.strReplaceTasks) {
 				if (tsk.doneTime != tsk.expectedDoneTime) {
-					errs << T(L"在函数",L"In function") << std::hex << f.base << std::dec << T(L"中, 字符串“",L"string \"") << tsk.from << T(L"”预期",L"\" expected") << tsk.expectedDoneTime << T(L"次,实际", L" times, but actually ") << tsk.doneTime << T(L"次\n",L"times\n");
+					errs << T(L"在函数", L"In function ", L"함수 ") << std::hex << f.base << std::dec << T(L"中, 字符串“",L" string \"",L"에서 문자열 \"") << tsk.from << T(L"”预期", L"\" expected ", L"\"은 ") << tsk.expectedDoneTime << T(L"次,实际", L" times, but actually ", L"회 사용되어야 하나 ") << tsk.doneTime << T(L"次\n", L"times\n", L"회 사용되었습니다\n");
 					hasErr = true;
 				}
 			}
@@ -259,7 +259,7 @@ class IIDTrans : public Patcher {
 		unsigned char* mov_2fh_1 = 0x083CC8C + 3 - IDA_BASE + patchContext.isaac_ng_base;
 		unsigned char* mov_2fh_2 = 0x083CC93 + 3 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
-			errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)");
+			errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)\n", L"스핀다운 주사위 패치 포인트를 찾을 수 없습니다 (call 위치를 찾을 수 없습니다)\n");
 			hasErr = true;
 		}
 		else {
@@ -271,7 +271,7 @@ class IIDTrans : public Patcher {
 		}
         if(prop_render_patched_count != prop_render_excepted_patch_count){
             hasErr = true;
-			errs << T(L"函数Hook与预期不符，预期", L"Function hook mismatched, expected ") << prop_render_excepted_patch_count << T(L"次，实际", L" times, but actually ") << prop_render_patched_count << T(L"次", L" times");
+			errs << T(L"函数Hook与预期不符，预期", L"Function hook mismatched, expected ", L"함수 후크가 일치하지 않습니다. (") << prop_render_excepted_patch_count << T(L"次，实际", L" times, but actually ", L"회 호출되어야 하나 ") << prop_render_patched_count << T(L"次", L" times", L"회 호출되었습니다)");
         }
 		if (hasErr)
 			throw PatchException(errs.str());
@@ -375,7 +375,7 @@ public:
 		// GetCharacterWidth 最后一个引用偏移大于300h的caller site, 偏移大概是489左右？
 		unsigned char* call_instr = 0x009F0719 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
-			throw PatchException(T(L"找不到call修改点", L"Can't find call site.", L"call 위치를 찾을 수 없습니다."));
+			throw PatchException(T(L"找不到call修改点", L"Can't find call site", L"call 위치를 찾을 수 없습니다"));
 		}
 
 		//hook the call
@@ -413,7 +413,7 @@ public:
 				*game_start_in = leakStr(trans);
 			}
 			else {
-				throw PatchException(T(L"找不到开始游戏字符串", L"Can't find game start in... text."));
+				throw PatchException(T(L"找不到开始游戏字符串", L"Can't find game start in... text.", L"게임 시작 문자열을 찾을 수 없습니다"));
 			}
 		}
 	}
@@ -430,7 +430,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
 		unsigned char* jmp = 0x098EFE8 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
-			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location"));
+			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location", L"패치 위치를 찾을 수 없습니다"));
 		}
 		// nop the jmp
 		jmp[0] = 0x90;
@@ -449,7 +449,7 @@ class MinimapTimeLabelFontPatcherRgon : public Patcher {
 		// #MINIMAP_TIME_LABEL 参考上面非Regon的版本
 		unsigned char* jmp = 0x0966704 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x0C) {
-			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location"));
+			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location", L"패치 위치를 찾을 수 없습니다"));
 		}
 		// nop the jmp
 		jmp[0] = 0x90;
