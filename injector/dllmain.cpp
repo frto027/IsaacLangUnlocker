@@ -674,7 +674,6 @@ namespace FileCopy {
 	}
 }
 
-
 extern "C" {
 	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
@@ -729,6 +728,23 @@ extern "C" {
 				fclose(f);
 				game_hash &= ~0x80000000;
 
+				if(ng_checksum == 1370072505 /* game exe of repentence*/){
+					switch (getLang()) {
+						case LANG_CN:
+						MessageBoxW(NULL, L"你的游戏版本是【忏悔】，本补丁适用于【忏悔+】，因此无法使用中文补丁。\n\n"
+							"目前以撒一共有五个版本：重生(本体)、胎衣(DLC1)、胎衣+(DLC2)、忏悔(DLC3)、忏悔+(DLC4)\n"
+							"你现在的游戏版本是忏悔，自带官方中文，请在steam校验游戏完整性以移除本中文补丁，然后在游戏设置里切换中文。\n\n"
+							"忏悔+是在忏悔之后发行的一个免费联机测试DLC，该DLC不含官方中文，你尚未安装。\n"
+							"你也可以安装这个免费DLC后使用此补丁。\n\n"
+							"补丁无法生效，即将退出。"
+							, L"中文补丁版本不匹配，请仔细阅读", MB_ICONINFORMATION);
+						return;
+						case LANG_EN:
+						MessageBoxW(NULL, L"Your current game version is [repentance], however this patch only avaliable for [repentance+].\n\n"
+							, L"Game Version Mismatch", MB_ICONINFORMATION);
+						return;
+					}
+				}
 				if (ng_checksum != game_hash) {
 					wchar_t ascii[128];
 					_itow(game_hash, ascii, 10);
