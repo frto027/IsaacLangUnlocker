@@ -731,14 +731,15 @@ extern "C" {
 				if(game_hash == 1370072505 /* game exe of repentence*/){
 					switch (getLang()) {
 						case LANG_CN:
-						MessageBoxW(NULL, L"你的游戏版本是【忏悔】，本补丁适用于【忏悔+】，因此无法使用中文补丁。\n\n"
-							"目前以撒一共有五个版本：重生(本体)、胎衣(DLC1)、胎衣+(DLC2)、忏悔(DLC3)、忏悔+(DLC4)\n"
-							"你现在的游戏版本是忏悔，自带官方中文，请在steam校验游戏完整性以移除本中文补丁，然后在游戏设置里切换中文。\n\n"
-							"忏悔+是在忏悔之后发行的一个免费联机测试DLC，该DLC不含官方中文，你尚未安装。\n"
+						MessageBoxW(NULL, L"你的操作有误，请仔细阅读：\n你的游戏版本是【忏悔】，本中文补丁适用于【忏悔+】，因此无法使用。\n\n"
+							"目前以撒一共有五个版本：重生(Rebirth)、胎衣(Afterbirth)、胎衣+(Afterbirth+)、忏悔(Repentance)、忏悔+(Repentance+)\n"
+							"可选操作1：\n"
+							"你现在的游戏版本是【忏悔】，无需补丁，自带官方中文，请在steam【右键游戏，属性，已安装文件，验证游戏文件的完整性】移除本中文补丁，然后在游戏设置里切换中文。\n\n"
+							"可选操作2：\n忏悔+是在忏悔之后发行的一个免费联机测试DLC，该DLC不含官方中文，你尚未安装。\n"
 							"你也可以安装这个免费DLC后使用此补丁。\n\n"
-							"如果你曾经强行打过此补丁，你的游戏可能已经损坏，请务必【检查游戏完整性】去除此中文补丁。"
+							"如果你曾经强行打过此补丁，你的游戏文件会损坏，请务必按照上述操作之一进行。"
 							"补丁无法生效，即将退出。"
-							, L"中文补丁版本不匹配，请仔细阅读", MB_ICONINFORMATION);
+							, L"中文补丁版本不匹配", MB_ICONINFORMATION);
 						return;
 						case LANG_EN:
 						MessageBoxW(NULL, L"Your current game version is [repentance], however this patch only avaliable for [repentance+].\n\n"
