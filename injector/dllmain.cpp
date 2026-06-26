@@ -728,7 +728,7 @@ extern "C" {
 				fclose(f);
 				game_hash &= ~0x80000000;
 
-				if(ng_checksum == 1370072505 /* game exe of repentence*/){
+				if(game_hash == 1370072505 /* game exe of repentence*/){
 					switch (getLang()) {
 						case LANG_CN:
 						MessageBoxW(NULL, L"你的游戏版本是【忏悔】，本补丁适用于【忏悔+】，因此无法使用中文补丁。\n\n"
