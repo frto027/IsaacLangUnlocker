@@ -745,6 +745,10 @@ extern "C" {
 						MessageBoxW(NULL, L"Your current game version is [repentance], however this patch only avaliable for [repentance+].\n\n"
 							, L"Game Version Mismatch", MB_ICONINFORMATION);
 						return;
+						case LANG_KR:
+						MessageBoxW(NULL, L"설치된 게임은 [리펜턴스]입니다. 본 패치는 [리펜턴스+]만 지원합니다.\n패치를 적용할 수 없으므로 프로그램을 종료합니다."
+							, L"게임 버전 불일치", MB_ICONINFORMATION);
+						return;
 					}
 				}
 				if (ng_checksum != game_hash) {
