@@ -118,7 +118,7 @@ bool extract_userenv(wchar_t* isaac_ng_path) {
 	if (!f) {
 		MessageBoxW(NULL,
 			T(
-				L"请检查是否游戏正在运行，硬盘空间是否充足，以及杀毒软件是否拦截。",
+				L"无法写入文件。请保持游戏处于关闭状态，并检查硬盘空间是否充足，同时检查是否被杀毒软件拦截（如有拦截请向我们反馈）。",
 				L"please check if the game is running, disk size is sufficient",
 				L"게임이 실행 중인지, 디스크 공간이 충분한지, 백신 소프트웨어가 차단하고 있지 않은지 확인해 주세요.")
 			,
@@ -239,7 +239,7 @@ int WinMain(
 		}
 		f = _wfopen(file, L"wb");
 		if (!f) {
-			MessageBoxW(NULL, T(L"无法打开文件进行写入。请检查游戏是否正在运行、输入的游戏主程序路径是否正确。",
+			MessageBoxW(NULL, T(L"无法打开文件进行写入。请保持游戏处于关闭状态，并检查输入的游戏主程序路径是否正确。也可以尝试解压后右键使用管理员权限运行patcher。",
 								L"TRANSPATE_ME",
 								L"파일을 열고 쓰기가 불가능합니다. 게임이 실행 중이거나 입력한 메인 프로그램 경로가 올바른지 확인해 주세요."), T(L"中文补丁错误", L"Patch error", L"패치 오류"), MB_ICONERROR);
 			return 0;
