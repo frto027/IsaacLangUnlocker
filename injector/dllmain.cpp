@@ -284,7 +284,7 @@ HookedDispatchMessageW(
 		}
 	}
 	
-	return DispatchMessageA(lpMsg);
+	return DispatchMessageW(lpMsg);
 }
 
 SHORT
