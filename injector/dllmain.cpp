@@ -678,12 +678,19 @@ namespace FileCopy {
 	}
 }
 
-void AvoidAntiCheat();
+enum ANTI_CHEAT{
+	ANTI_CHEAT_RETRY,
+	ANTI_CHEAT_IGNORE,
+};
+ANTI_CHEAT AvoidAntiCheat();
 
 extern "C" {
 	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
-		AvoidAntiCheat();
+		for (;;) {
+			if (AvoidAntiCheat() == ANTI_CHEAT_IGNORE)
+				break;
+		}
 		// in rgon mode, the mod folder is always "..\\mods\\xxx"
 		if(modfolder_root[0] == '.' && modfolder_root[1] == '.' && modfolder_root[2] == '\\')
 			patchContext.is_rgon = true;
@@ -814,37 +821,45 @@ const char * anti_cheat_processes[] = {
 	NULL
 };
 
-void AvoidAntiCheat() {
+
+ANTI_CHEAT AvoidAntiCheat() {
 	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 	if (snapshot == INVALID_HANDLE_VALUE)
-		return;
+		return ANTI_CHEAT_IGNORE;
 
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof(pe);
 	if (!Process32First(snapshot, &pe))
-		return;
+		return ANTI_CHEAT_IGNORE;
 	do{
 		for(int i=0;anti_cheat_processes[i];i++){
 			if(_strcmpi(pe.szExeFile, anti_cheat_processes[i]) == 0){
 				wchar_t msg[2048];
 				wsprintfW(msg, T(
-						L"游戏即将退出。已检测到反作弊系统(%S)，本补丁与该反作弊系统不兼容。请避免在反作弊系统开启的情况下使用此补丁。",
-						L"The Binding of Isaac game will exit.Anti system(%S) detected, which is not compat with LangHackRep+. Please avoid use this program while anti cheat system is enabling."),
+						L"警告：已检测到反作弊系统(%S)，中文补丁与该反作弊系统可能不兼容，继续游戏可能导致错误或错误封禁账号。请避免在反作弊系统生效的情况下使用此补丁。\n中止=退出游戏，重试=重新检测，忽略=继续游戏",
+						L"Anti system(%S) detected, which maybe not compat with LangHackRep+, continue may cause error or account ban in that game. Please avoid use this program while anti cheat system is activated.\n Press abort to exit the game now, retry to detect again, ignore to continue game."),
 						pe.szExeFile
 					);
-				MessageBoxW(NULL, 
+				auto ret = MessageBoxW(NULL,
 					msg,
-					T(L"反作弊系统兼容性提示"
+					T(
+						L"反作弊系统兼容性提示",
 						L"Anti Cheat System Compat Report"
 					),
-					MB_ICONINFORMATION);
-				exit(0);
+					MB_ICONWARNING | MB_ABORTRETRYIGNORE);
+
+				if (ret == IDABORT) {
+					exit(0);
+				}
+				if (ret == IDRETRY) {
+					return ANTI_CHEAT_RETRY;
+				}
 			}
 		}
 	}while (Process32Next(snapshot, &pe));
 
 	CloseHandle(snapshot);
-	return;
+	return ANTI_CHEAT_IGNORE;
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
