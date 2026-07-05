@@ -60,18 +60,18 @@ The only changes is that, the repentogon's mod-loader loads our mod-loader, it i
 
 For the rgon version of chinese patch, the isaac-ng.exe is not patched. The `bootstp.dll` is renamed to `zhlLangHack.dll` and a function called `ModInit` is added so this dll is loaded by [the repentogon's Mod Loader](https://github.com/TeamREPENTOGON/REPENTOGON/blob/0db6d0ca7ec5286318f774ca388195cf06109fd2/loader/loader.cpp#L143).
 
-### Inject.dll
+### Inject.dll/language_unlocker.dll
 
-The inject.dll can be updated by the mod loader, so we had no pressure to fully test it. That's right, I'm confident it will work well. Even if it doesn't work well, I can update it, the player don't need do anything.
+The language_unlocker.dll can be updated by the mod loader, so we had no pressure to fully test it. That's right, I'm confident it will work well. Even if it doesn't work well, I can update it, the player don't need do anything.
 
 > [!TIP]
 > All things in this section maybe changed in the future. Because the inject.dll can be auto updated and totally changed.
 
-The `inject.dll` reads `config.ini` inside the game folder. And reads `data/xxx` as an input from mod config menu. Player don't need to change config.ini unless they want do some hack.
+The `language_unlocker.dll` reads `config.ini` inside the game folder. And reads `data/xxx` as an input from mod config menu. Player don't need to change config.ini unless they want do some hack.
 
-The resource files are replaced by `inject.dll`. So we can control the replace progress in future update.
+The resource files are replaced by `language_unlocker.dll`. So we can control the replace progress in future update.
 
-We do have several patchers inside the inject.dll. They are carefully designed to not break the game. I'd say the online game works well with this design.
+We do have several patchers inside the language_unlocker.dll. They are carefully designed to not break the game. I'd say the online game works well with this design.
 
 ### The magic of `.a` file
 
