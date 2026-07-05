@@ -1,4 +1,6 @@
-﻿#include <windows.h>
+﻿#include <cstddef>
+#include <string.h>
+#include <windows.h>
 #include "Injector.h"
 #include <DbgHelp.h>
 #include <stdio.h>
@@ -13,6 +15,8 @@
 #include <Shlwapi.h>
 #include <optional>
 #include <intrin.h>
+#include <tlhelp32.h>
+#include <winuser.h>
 #include "../lang.h"
 #include "../defines.h"
 
@@ -674,9 +678,12 @@ namespace FileCopy {
 	}
 }
 
+void AvoidAntiCheat();
+
 extern "C" {
 	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
+		AvoidAntiCheat();
 		// in rgon mode, the mod folder is always "..\\mods\\xxx"
 		if(modfolder_root[0] == '.' && modfolder_root[1] == '.' && modfolder_root[2] == '\\')
 			patchContext.is_rgon = true;
@@ -796,6 +803,48 @@ extern "C" {
 	}
 }
 
+// do not patch the game when the following process is detected
+const char * anti_cheat_processes[] = {
+	"EasyAntiCheat.exe",
+	"EasyAntiCheat_EOS.exe",
+	"EasyAntiCheat_Setup.exe",
+	"BEService.exe",
+	"vgc.exe",
+	"vgtray.exe",
+	NULL
+};
+
+void AvoidAntiCheat() {
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (snapshot == INVALID_HANDLE_VALUE)
+		return;
+
+	PROCESSENTRY32 pe;
+	pe.dwSize = sizeof(pe);
+	while (Process32First(snapshot, &pe)) {
+
+		for(int i=0;anti_cheat_processes[i];i++){
+			if(_strcmpi(pe.szExeFile, anti_cheat_processes[i]) == 0){
+				wchar_t msg[2048];
+				wsprintfW(msg, T(
+						L"游戏即将退出。已检测到反作弊系统(%S)，本补丁与该反作弊系统不兼容。请避免在反作弊系统开启的情况下使用此补丁。",
+						L"The Binding of Isaac game will exit.Anti system(%S) detected, which is not compat with LangHackRep+. Please avoid use this program while anti cheat system is enabling."),
+						pe.szExeFile
+					);
+				MessageBoxW(NULL, 
+					msg,
+					T(L"反作弊系统兼容性提示"
+						L"Anti Cheat System Compat Report"
+					),
+					MB_ICONINFORMATION);
+				exit(0);
+			}
+		}
+	}
+
+	CloseHandle(snapshot);
+	return;
+}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
