@@ -111,7 +111,7 @@ bool TryLoad(std::wstring mod_folder) {
 
 	// 我们将模组目录下的loader.bin拷贝至游戏目录的inject.dll并加载，以避免出现文件锁，使得游戏无法更新mod。
 	
-	const wchar_t* tmp = L".\\inject.dll";
+	const wchar_t* tmp = L".\\language_unlocker.dll";
 	if (getLang() == LANG_CN) {
 		if (!CopyFileFromTo(mod_folder + L"res\\inject.bin", tmp))
 			return true;

@@ -45,7 +45,8 @@ The patcher replace the string `userenv.dll` to `bootstp.dll` inside the `isaac-
 
 > For the earlier version, I use `userenv.dll` directly, without the exe-patch. But some player can't load it, and some player loaded it but it breaks some third-party programs such as IME that also depends on the `userenv.dll` inside the `isaac-ng.exe`. And some player is confused about how to uninstall the mod because the original game file is not changed. It's good design because player don't need re-patch after the game update, but some player confuse about this so I removed this design.
 
-The `bootstp.dll`, which is compiled from directory `bootstrap`, will try to sync a file called `inject.bin` from the mod directory to the game install folder `inject.dll` at every game start. Then `LoadLibrary("inject.dll")` and call `Load(modPath)` inside the `inject.dll`.
+~~The `bootstp.dll`, which is compiled from directory `bootstrap`, will try to sync a file called `inject.bin` from the mod directory to the game install folder `inject.dll` at every game start. Then `LoadLibrary("inject.dll")` and call `Load(modPath)` inside the `inject.dll`.~~
+The `bootstp.dll`, which is compiled from directory `bootstrap`, will try to sync a file called `inject.bin` from the mod directory to the game install folder `language_unlocker.dll` at every game start. Then `LoadLibrary("language_unlocker.dll")` and call `Load(modPath)` inside the `language_unlocker.dll`.
 
 The mod loader is not a version-related design, it will succees at every game version, including the future game update.
 
