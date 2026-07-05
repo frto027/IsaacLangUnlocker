@@ -118,7 +118,7 @@ bool extract_userenv(wchar_t* isaac_ng_path) {
 	if (!f) {
 		MessageBoxW(NULL,
 			T(
-				L"请检查是否游戏正在运行，硬盘空间是否充足，以及杀毒软件是否拦截，忏悔龙文件夹Repentogon是否存在。",
+				L"本补丁不是原版游戏的中文补丁，适用于忏悔龙版本！请检查是否游戏正在运行，硬盘空间是否充足，以及杀毒软件是否拦截，忏悔龙文件夹Repentogon是否存在。",
 				L"please check if the game is running, disk size is sufficient",
 				L"게임이 실행 중인지, 디스크 공간이 충분한지, 백신 소프트웨어가 차단하고 있지 않은지 확인해 주세요.\n혹은 바닐라 isaac-ng.exe에 이 패쳐를 적용 중인 건 아닌지 확인해 주세요.")
 			,

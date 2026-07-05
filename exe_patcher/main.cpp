@@ -211,6 +211,26 @@ int WinMain(
 	}
 	fclose(f);
 
+	bool looks_like_isaac_game = false;
+	for (int i = 0; i < sz - 100; i++) {
+		if (strncmp(&buff[i], "Binding of Isaac",16) == 0) {
+			looks_like_isaac_game = true;
+			break;
+		}
+	}
+	if (!looks_like_isaac_game) {
+		MessageBoxW(NULL, T(
+			L"你选择的文件并非以撒的结合游戏主程序，无法补丁。补丁程序即将退出。",
+			L"The file you selected is not the main program of the Binding of Isaac game. Patcher will exit."
+		), T(
+			L"文件特征与游戏不符",
+			L"File not looks like the game"
+		),
+			MB_ICONERROR
+		);
+		exit(0);
+	}
+
 	char* before = "userenv";
 	char* after = "bootstp";
 

@@ -134,7 +134,7 @@ bool TryLoad(std::wstring mod_folder) {
 
 	HMODULE m = LoadLibraryW(tmp);
 	if (!m) {
-		MessageBoxW(NULL,T( L"中文补丁程序inject.dll无法载入", L"Can't load inject.dll", L"inject.dll을 불러올 수 없습니다."), 
+		MessageBoxW(NULL,T( L"中文补丁程序language_unlocker.dll无法载入", L"Can't load language_unlocker.dll", L"language_unlocker.dll을 불러올 수 없습니다."), 
 			rgon_mode ? T(L"[忏悔龙]中文模组加载失败",L"[RGON]Language mod load failed",L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败",L"Language mod load failed",L"한글패치 불러오기 실패"),
 			MB_ICONERROR);
 		return true;
@@ -145,8 +145,8 @@ bool TryLoad(std::wstring mod_folder) {
 		MessageBoxW(NULL, 
 			rgon_mode ?
 
-			T(L"中文补丁程序inject.dll无法载入，找不到LoadRgon函数", L"Can't load inject.dll, LoadRgon function not found.", L"inject.dll을 불러올 수 없습니다. LoadRgon 함수를 찾을 수 없습니다.")
-			:T(L"中文补丁程序inject.dll无法载入，找不到Load函数", L"Can't load inject.dll, Load function not found.", L"inject.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다.")
+			T(L"中文补丁程序language_unlocker.dll无法载入，找不到LoadRgon函数", L"Can't load language_unlocker.dll, LoadRgon function not found.", L"language_unlocker.dll을 불러올 수 없습니다. LoadRgon 함수를 찾을 수 없습니다.")
+			:T(L"中文补丁程序language_unlocker.dll无法载入，找不到Load函数", L"Can't load language_unlocker.dll, Load function not found.", L"language_unlocker.dll을 불러올 수 없습니다. Load 함수를 찾을 수 없습니다.")
 
 			, 
 			rgon_mode ? T(L"[忏悔龙]中文模组加载失败", L"[RGON]Language mod load failed", L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"),

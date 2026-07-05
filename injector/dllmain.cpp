@@ -821,8 +821,9 @@ void AvoidAntiCheat() {
 
 	PROCESSENTRY32 pe;
 	pe.dwSize = sizeof(pe);
-	while (Process32First(snapshot, &pe)) {
-
+	if (!Process32First(snapshot, &pe))
+		return;
+	do{
 		for(int i=0;anti_cheat_processes[i];i++){
 			if(_strcmpi(pe.szExeFile, anti_cheat_processes[i]) == 0){
 				wchar_t msg[2048];
@@ -840,7 +841,7 @@ void AvoidAntiCheat() {
 				exit(0);
 			}
 		}
-	}
+	}while (Process32Next(snapshot, &pe));
 
 	CloseHandle(snapshot);
 	return;
