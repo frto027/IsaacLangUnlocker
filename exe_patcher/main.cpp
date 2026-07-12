@@ -221,10 +221,12 @@ int WinMain(
 	if (!looks_like_isaac_game) {
 		MessageBoxW(NULL, T(
 			L"你选择的文件并非以撒的结合游戏主程序，无法补丁。补丁程序即将退出。",
-			L"The file you selected is not the main program of the Binding of Isaac game. Patcher will exit."
+			L"The file you selected is not the main program of the Binding of Isaac game. Patcher will exit.",
+			L"선택한 파일은 아이작의 메인 프로그램이 아닙니다. 패쳐를 종료합니다."
 		), T(
 			L"文件特征与游戏不符",
-			L"File not looks like the game"
+			L"File not looks like the game",
+			L"파일 불일치"
 		),
 			MB_ICONERROR
 		);
