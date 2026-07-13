@@ -815,7 +815,6 @@ const char * anti_cheat_processes[] = {
 	"EasyAntiCheat.exe",
 	"EasyAntiCheat_EOS.exe",
 	"EasyAntiCheat_Setup.exe",
-	"BEService.exe",
 	NULL
 };
 
