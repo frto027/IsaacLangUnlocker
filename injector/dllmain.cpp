@@ -835,14 +835,16 @@ ANTI_CHEAT AvoidAntiCheat() {
 				wchar_t msg[2048];
 				wsprintfW(msg, T(
 						L"警告：已检测到反作弊系统(%S)，中文补丁与该反作弊系统可能不兼容，继续游戏可能导致错误或错误封禁账号。请避免在反作弊系统生效的情况下使用此补丁。\n中止=退出游戏，重试=重新检测，忽略=继续游戏",
-						L"Anti system(%S) detected, which maybe not compat with LangHackRep+, continue may cause error or account ban in that game. Please avoid use this program while anti cheat system is activated.\n Press abort to exit the game now, retry to detect again, ignore to continue game."),
+						L"Anti system(%S) detected, which maybe not compat with LangHackRep+, continue may cause error or account ban in that game. Please avoid use this program while anti cheat system is activated.\n Press abort to exit the game now, retry to detect again, ignore to continue game.",
+						L"안티치트(%S)가 감지되었습니다. LangHackRep+는 해당 안티치트와 호환되지 않을 수 있으며, 게임을 계속할 경우 오류가 발생하거나 해당 안티치트를 사용하는 게임에서 무고밴을 당할 수 있습니다. 안티치트가 활성화된 상황에서 이 패치를 사용하지 마십시오.\n 중단: 프로그램을 종료합니다\n 다시 시도: 프로그램을 재검증합니다\n 무시: 경고를 무시하고 게임을 재개합니다"),
 						pe.szExeFile
 					);
 				auto ret = MessageBoxW(NULL,
 					msg,
 					T(
 						L"反作弊系统兼容性提示",
-						L"Anti Cheat System Compat Report"
+						L"Anti Cheat System Compat Report",
+						L"안티치트 호환성 안내"
 					),
 					MB_ICONWARNING | MB_ABORTRETRYIGNORE);
 
