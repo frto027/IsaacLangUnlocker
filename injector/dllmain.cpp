@@ -265,7 +265,11 @@ HookedDispatchMessageW(
 				return true;
 			}
 			break;
-
+		case 1251: // russian
+			if(lpMsg->wParam >= 0x80){
+				SendCharViaClipboard(lpMsg->hwnd, lpMsg->wParam);
+				return true;
+			}
 		default:
 			break;
 		}
