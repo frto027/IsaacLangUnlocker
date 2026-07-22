@@ -820,7 +820,7 @@ extern "C" {
 			L"忏悔龙升级提示",
 			L"REPENTOGON Upgrade hint"
 		),
-		MB_ICONWARNING | MB_ABORTRETRYIGNORE);
+		MB_ICONINFORMATION);
 
 		// Load(modfolder_root);
 	}
