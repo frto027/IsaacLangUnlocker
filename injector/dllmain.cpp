@@ -810,7 +810,19 @@ extern "C" {
 	//latest will use this function for rgon mod loader
 	__declspec(dllexport) void LoadRgon(const wchar_t* modfolder_root){
 		patchContext.is_rgon = true;
-		Load(modfolder_root);
+		auto ret = MessageBoxW(NULL,
+		T(L"忏悔龙二进制补丁已过时，忏悔龙即将支持原生本地化，请手动删除游戏根目录下的这个文件以卸载中文补丁代码：\n"
+			"Repentogon\\zhlLangHack.dll\n其余残留完全不影响游戏，您也可以手动删除Repentogon文件夹来重新安装忏悔龙\n"
+			"本补丁将以mod的形式继续提供支持，面向忏悔龙的patcher已移除。",
+			L"LangHackRep+ for Repentogon is depratched\nPlease delete Repentogon\\zhlLangHack.dll in your game folder.\nREPENTOGON will have native localization support :)"
+		),
+		T(
+			L"忏悔龙升级提示",
+			L"REPENTOGON Upgrade hint"
+		),
+		MB_ICONWARNING | MB_ABORTRETRYIGNORE);
+
+		// Load(modfolder_root);
 	}
 }
 
