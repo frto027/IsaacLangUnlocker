@@ -814,11 +814,14 @@ extern "C" {
 		T(L"忏悔龙二进制补丁已过时，忏悔龙即将支持原生本地化，请手动删除游戏根目录下的这个文件以卸载中文补丁代码：\n"
 			"Repentogon\\zhlLangHack.dll\n其余残留完全不影响游戏，您也可以手动删除Repentogon文件夹来重新安装忏悔龙\n"
 			"本补丁将以mod的形式继续提供支持，面向忏悔龙的patcher已移除。",
-			L"LangHackRep+ for Repentogon is depratched\nPlease delete Repentogon\\zhlLangHack.dll in your game folder.\nREPENTOGON will have native localization support :)"
+			L"LangHackRep+ for Repentogon is depratched\nPlease delete Repentogon\\zhlLangHack.dll in your game folder.\nREPENTOGON will have native localization support :)",
+			L"REPENTOGON 바이너리 패치는 더 이상 지원하지 않습니다. 게임이 설치된 경로에서 다음 파일을 직접 삭제하십시오.\n\n"
+			"Repentogon\\zhlLangHack.dll\n\n또는 REPENTOGON 폴더를 직접 삭제하여 REPENTOGON을 재설치할 수 있습니다."
 		),
 		T(
 			L"忏悔龙升级提示",
-			L"REPENTOGON Upgrade hint"
+			L"REPENTOGON Upgrade hint",
+			L"REPENTOGON 업그레이드 안내"
 		),
 		MB_ICONINFORMATION);
 
