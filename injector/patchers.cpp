@@ -22,7 +22,9 @@ class I18nUnlock : public Patcher {
 	unsigned char signature_ver_1_9_7_13[121] =  "\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x8D\x8E\x10\xA9\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x10\xA9\x04\x00\x74\x0A\xC7\x86\x0C\xA9\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x8D\x8E\x28\xA9\x04\x00\x50\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x28\xA9\x04\x00\x74\x0A\xC7\x86\x24\xA9\x04\x00\x0D\x00\x00\x00";	
 	
 	unsigned char signature_ver_1_9_7_16[142] = "\x55\x8B\xEC\x83\xEC\x10\x56\x57\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x50\x8D\x8E\x24\xA9\x04\x00\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x24\xA9\x04\x00\x74\x0A\xC7\x86\x20\xA9\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x50\x8D\x8E\x3C\xA9\x04\x00\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x3C\xA9\x04\x00\x74\x0A\xC7\x86\x38\xA9\x04\x00\x0D\x00\x00\x00\xE8\xCC\xCC\xCC\xCC\x5F\x5E\x8B\xE5\x5D\xC2\x04\x00";
-	#define USING_SIGNATURE signature_ver_1_9_7_16
+	unsigned char signature_ver_1_9_7_19[130] = "\x55\x8B\xEC\x83\xEC\x10\x56\x57\x8B\xF1\xC7\x45\xFC\x0D\x00\x00\x00\x8D\x45\xFC\x50\x8D\x45\xF0\x50\x8D\x8E\xFC\xAB\x04\x00\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\xFC\xAB\x04\x00\x74\x0A\xC7\x86\xF8\xAB\x04\x00\x0D\x00\x00\x00\x8D\x45\xFC\xC7\x45\xFC\x0D\x00\x00\x00\x50\x8D\x45\xF0\x50\x8D\x8E\x14\xAC\x04\x00\xE8\xCC\xCC\xCC\xCC\x8B\x45\xF8\x80\x78\x0D\x00\x75\x18\x83\x78\x10\x0D\x7F\x12\x3B\x86\x14\xAC\x04\x00\x74\x0A\xC7\x86\x10\xAC\x04\x00\x0D\x00\x00\x00\xE8";
+
+#define USING_SIGNATURE signature_ver_1_9_7_19
 
 	bool sigmatch(unsigned char* signature, int size, void* pos) {
 		unsigned char* bts = (unsigned char*)pos;
@@ -132,13 +134,13 @@ class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
 
 	// 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
-#define IID_COLOR_FUNC_OFFSET (0x0084DC00 - IDA_BASE)
+#define IID_COLOR_FUNC_OFFSET (0x00857090 - IDA_BASE)
 
 
 	// 更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
 		//搜索字符串 empty red health找所在函数
-		{0x0084F780 - IDA_BASE, {
+		{0x00858E70 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
 			{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心")		},
 			{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心")		},
@@ -153,8 +155,8 @@ class IIDTrans : public Patcher {
 		}},
 
 		//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
-		{0x0084DEA0 - IDA_BASE },
-		{0x0084E200 - IDA_BASE },
+		{0x00857410 - IDA_BASE },
+		{0x00857790 - IDA_BASE },
 
 	};
 
@@ -253,22 +255,24 @@ class IIDTrans : public Patcher {
 		...
 		call
 		*/
-		replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
-		unsigned char* call_hook = 0x0083CCE8 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* push_30h = 0x0083CC72 + 1 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* mov_2fh_1 = 0x083CC8C + 3 - IDA_BASE + patchContext.isaac_ng_base;
-		unsigned char* mov_2fh_2 = 0x083CC93 + 3 - IDA_BASE + patchContext.isaac_ng_base;
-		if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
-			errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)\n", L"스핀다운 주사위 패치 포인트를 찾을 수 없습니다 (call 위치를 찾을 수 없습니다)\n");
-			hasErr = true;
-		}
-		else {
-			*push_30h = strlen(replaced_spindown_dice_text) + 1;
-			*mov_2fh_1 = *mov_2fh_2 = strlen(replaced_spindown_dice_text);
-			int* call_off = (int*)&call_hook[1];
-			orig_hooked_spindown_iid_strcat_call = (decltype(orig_hooked_spindown_iid_strcat_call))((int32_t)(call_hook + 5) + *call_off);
-			*call_off = ((int32_t)hooked_spindown_iid_strcat_call) - (int32_t)(call_hook + 5);
-		}
+		// spindown dice 在1.9.7.19已经换成stringtable，无需补丁
+		
+		//replaced_spindown_dice_text = leakStr(config.GetOrDefault("Trans", "_spindown_into", u8"<color=0xFF00FF00>计数二十面骰 至<collectible="));
+		//unsigned char* call_hook = 0x0083CCE8 - IDA_BASE + patchContext.isaac_ng_base;
+		//unsigned char* push_30h = 0x0083CC72 + 1 - IDA_BASE + patchContext.isaac_ng_base;
+		//unsigned char* mov_2fh_1 = 0x083CC8C + 3 - IDA_BASE + patchContext.isaac_ng_base;
+		//unsigned char* mov_2fh_2 = 0x083CC93 + 3 - IDA_BASE + patchContext.isaac_ng_base;
+		//if (call_hook[0] != 0xE8 || *push_30h != 0x30 || *mov_2fh_1 != 0x2F || *mov_2fh_2 != 0x2F) {
+		//	errs << T(L"spindowndice补丁点没有找到(call指令没有找到)\n", L"Can't find spindown dice patch point(call not found)\n", L"스핀다운 주사위 패치 포인트를 찾을 수 없습니다 (call 위치를 찾을 수 없습니다)\n");
+		//	hasErr = true;
+		//}
+		//else {
+		//	*push_30h = strlen(replaced_spindown_dice_text) + 1;
+		//	*mov_2fh_1 = *mov_2fh_2 = strlen(replaced_spindown_dice_text);
+		//	int* call_off = (int*)&call_hook[1];
+		//	orig_hooked_spindown_iid_strcat_call = (decltype(orig_hooked_spindown_iid_strcat_call))((int32_t)(call_hook + 5) + *call_off);
+		//	*call_off = ((int32_t)hooked_spindown_iid_strcat_call) - (int32_t)(call_hook + 5);
+		//}
         if(prop_render_patched_count != prop_render_excepted_patch_count){
             hasErr = true;
 			errs << T(L"函数Hook与预期不符，预期", L"Function hook mismatched, expected ", L"함수 후크가 일치하지 않습니다. (") << prop_render_excepted_patch_count << T(L"次，实际", L" times, but actually ", L"회 호출되어야 하나 ") << prop_render_patched_count << T(L"次", L" times", L"회 호출되었습니다)");
@@ -373,7 +377,7 @@ public:
 		Name = T(L"内置图鉴排版修复", L"IID Layout Fix", L"내부 아이템 설명 레이아웃 수정");
 
 		// GetCharacterWidth 最后一个引用偏移大于300h的caller site, 偏移大概是489左右？
-		unsigned char* call_instr = 0x009F0719 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* call_instr = 0x00A08E39 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(T(L"找不到call修改点", L"Can't find call site", L"call 위치를 찾을 수 없습니다"));
 		}
@@ -387,7 +391,7 @@ public:
 			// this is line break fix, only for chinese
 			// 往下翻，找这条汇编
 			//cmp     byte ptr [ecx+eax-1], 20h 
-			unsigned char* cmp_linebreak = 0x09F1007 - IDA_BASE + patchContext.isaac_ng_base;
+			unsigned char* cmp_linebreak = 0x0A09727 - IDA_BASE + patchContext.isaac_ng_base;
 			if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
 				throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
 			}
@@ -428,7 +432,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 			return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
-		unsigned char* jmp = 0x098EFE8 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* jmp = 0x009A62E8 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
 			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location", L"패치 위치를 찾을 수 없습니다"));
 		}
