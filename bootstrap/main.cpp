@@ -134,12 +134,22 @@ bool TryLoad(std::wstring mod_folder) {
 
 	HMODULE m = LoadLibraryW(tmp);
 	if (!m) {
-		MessageBoxW(NULL,T( L"中文补丁程序language_unlocker.dll无法载入", L"Can't load language_unlocker.dll", L"language_unlocker.dll을 불러올 수 없습니다."), 
-			rgon_mode ? T(L"[忏悔龙]中文模组加载失败",L"[RGON]Language mod load failed",L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败",L"Language mod load failed",L"한글패치 불러오기 실패"),
+		DWORD error = GetLastError();
+		WCHAR detail[1024] = { 0 };
+		WCHAR message[4096] = { 0 };
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, error, 0, detail, _countof(detail), NULL);
+		swprintf_s(message, _countof(message),
+			T(L"中文补丁程序language_unlocker.dll无法载入\n\n路径：%ls\n错误码：%lu\n%ls",
+			  L"Can't load language_unlocker.dll\n\nPath: %ls\nError code: %lu\n%ls",
+			  L"language_unlocker.dll을 불러올 수 없습니다.\n\n경로: %ls\n오류 코드: %lu\n%ls"),
+			tmp, error, detail);
+		MessageBoxW(NULL, message,
+			rgon_mode ? T(L"[忏悔龙]中文模组加载失败", L"[RGON]Language mod load failed", L"[RGON]한글패치 불러오기 실패") : T(L"中文模组加载失败", L"Language mod load failed", L"한글패치 불러오기 실패"),
 			MB_ICONERROR);
 		return true;
 	}
-
+	
 	auto inject = GetProcAddress(m, rgon_mode ? "LoadRgon" : "Load");
 	if (!inject) {
 		MessageBoxW(NULL, 
