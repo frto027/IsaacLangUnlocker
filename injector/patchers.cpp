@@ -432,7 +432,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 			return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
-		unsigned char* jmp = 0x009A62E8 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* jmp = 0x009A6138 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
 			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location", L"패치 위치를 찾을 수 없습니다"));
 		}
