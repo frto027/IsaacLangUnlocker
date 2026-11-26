@@ -165,9 +165,17 @@ HookedGlobalLock(
 	_In_ HGLOBAL hMem
 ) {
 	static char output[2048];
+
+	static time_t clipboard_calm_down = 0;
+
 	if (doesWeHasClipboardInformation() && hMem == (HGLOBAL)1) {
 		WideCharToMultiByte(CP_UTF8, 0, clipboardBytes, -1, output, sizeof(output), NULL, NULL);
+		clipboard_calm_down = timeGetTime() + 100;
 		return output;
+	}
+
+	if (timeGetTime() < clipboard_calm_down) {
+		return 0;
 	}
 
 	if (hMem == LastGetClipboardDataResult && GetACP() != 65001) {
