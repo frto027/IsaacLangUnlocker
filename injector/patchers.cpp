@@ -134,13 +134,13 @@ class IIDTrans : public Patcher {
 #define IDA_BASE 0x400000
 
 	// 这就是那个<color=FFF7513B>%.2f<color=0xffffffff>所在函数
-#define IID_COLOR_FUNC_OFFSET (0x00856F60 - IDA_BASE)
+#define IID_COLOR_FUNC_OFFSET (0x00856E30 - IDA_BASE)
 
 
 	// 更新点2 图鉴补丁
 	std::vector<FunctionRange> strReplaceTasksFunc = {
 		//搜索字符串 empty red health找所在函数
-		{0x00858E70 - IDA_BASE, {
+		{0x00858C10 - IDA_BASE, {
 			{" empty red health", 				config.GetOrDefault("Trans", "empty_red_health",		u8"空容器")		},//搜索empty red health
 			{" health", 						config.GetOrDefault("Trans", "health",				 	u8"红心")		},
 			{"Heals all red hearts",			config.GetOrDefault("Trans", "heal_all_red_heart",		u8"治愈所有红心")		},
@@ -155,8 +155,8 @@ class IIDTrans : public Patcher {
 		}},
 
 		//下面的是搜字符串<color=FFF7513B>%.2f<color=0xffffffff>的caller
-		{0x008572E0 - IDA_BASE },
-		{0x00857660 - IDA_BASE },
+		{0x008571B0 - IDA_BASE },
+		{0x00857530 - IDA_BASE },
 
 	};
 
@@ -377,7 +377,7 @@ public:
 		Name = T(L"内置图鉴排版修复", L"IID Layout Fix", L"내부 아이템 설명 레이아웃 수정");
 
 		// GetCharacterWidth 最后一个引用偏移大于300h的caller site, 偏移大概是489左右？
-		unsigned char* call_instr = 0x00A08CD9 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* call_instr = 0x00A09339 - IDA_BASE + patchContext.isaac_ng_base;
 		if (call_instr[0] != 0xE8) {
 			throw PatchException(T(L"找不到call修改点", L"Can't find call site", L"call 위치를 찾을 수 없습니다"));
 		}
@@ -391,7 +391,7 @@ public:
 			// this is line break fix, only for chinese
 			// 往下翻，找这条汇编
 			//cmp     byte ptr [ecx+eax-1], 20h 
-			unsigned char* cmp_linebreak = 0x0A095C7 - IDA_BASE + patchContext.isaac_ng_base;
+			unsigned char* cmp_linebreak = 0x0A09C27 - IDA_BASE + patchContext.isaac_ng_base;
 			if (strncmp((char*)cmp_linebreak, "\x80\x7c\x01\xFF\x20", 5) != 0) {
 				throw PatchException(T(L"无法补丁cmp指令", L"Can't patch cmp instruction", L"cmp 명령어를 패치할 수 없습니다"));
 			}
@@ -432,7 +432,7 @@ class MinimapTimeLabelFontPatcher : public Patcher {
 			return;
 
 		// #MINIMAP_TIME_LABEL 前面的if，偏移是76355/4A90Ch v6 = *((_DWORD *)dword_C0C05C + 76355) == 0;
-		unsigned char* jmp = 0x009A6138 - IDA_BASE + patchContext.isaac_ng_base;
+		unsigned char* jmp = 0x009A67B8 - IDA_BASE + patchContext.isaac_ng_base;
 		if (jmp[0] != 0x75 || jmp[1] != 0x09) {
 			throw PatchException(T(L"找不到补丁位置", L"Can't find patch location", L"패치 위치를 찾을 수 없습니다"));
 		}
