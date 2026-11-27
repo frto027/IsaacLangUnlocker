@@ -19,6 +19,8 @@
 #include <winuser.h>
 #include "../lang.h"
 #include "../defines.h"
+#include "imgui_driver.h"
+#include "imgui_windows.h"
 
 extern Config config;
 Config config;
@@ -313,75 +315,10 @@ HookedGetAsyncKeyState(
 	return GetAsyncKeyState(vKey);
 }
 
-
-#define CS_DONT_PATCH 0
-#define CS_PATCH 1
-int CheckSumForGameResources() {
-	if (config.records.count("checksum") == 0)
-		return CS_PATCH;
-	std::wstring errs = L"";
-
-
-	for (auto it : config.records["checksum"]) {
-		std::string file = it.first;
-		wchar_t file_w[1024];
-		mbstowcs(file_w, file.c_str(), 1023);
-		std::string checksum = it.second;
-		wchar_t checksum_w[256];
-		mbstowcs(checksum_w, checksum.c_str(), 255);
-		std::ifstream f(file);
-		
-		if (!f.is_open()) {
-			errs += std::wstring(L"找不到文件 ") + file_w + L"\n";
-			continue;
-		}
-
-		uint64_t hash = 0;
-		while (!f.eof()) {
-			uint64_t single = 0;
-			for (int i = 0; i < 8 && !f.eof(); i++) {
-				single <<= 8;
-				char ch;
-				f.get(ch);
-				single |= ch;
-			}
-			hash = (hash << 5) | (hash >> 59);
-			hash ^= single;
-		}
-		wchar_t buff[128];
-		
-		
-		int buff_len = 0;
-		const char* alpha = "abcdefghijkmnpqrstuvwxyzABCDEFGHIJKMNPQRSTUVWXYZ";
-		int alpha_count = strlen(alpha);
-		while (buff_len < 127 && hash != 0) {
-			buff[buff_len++] = alpha[hash % alpha_count];
-			hash /= alpha_count;
-		}
-		buff[buff_len] = '\0';
-
-		if (lstrcmpW(buff, checksum_w)) {
-			errs += std::wstring(L"文件 ") + file_w + L" 校验失败（预期 " + checksum_w + L" ，实际 " + buff + L"）\n";
-		}
-	}
-
-	if (errs != L"") {
-		int result =MessageBoxW(NULL, (L"资源不匹配，建议重新安装或移除中文补丁。\n"
-			"可能的原因之一是，游戏更新覆盖了中文补丁的资源文件，这会导致中文补丁无法按照预期工作。\n\n详细报告：\n" + errs + L"\n强制加载中文可能导致资源混乱，接下来要做什么，请点击按钮：\n中止=关闭游戏，重试=加载中文，忽略=不加载中文").c_str(), L"中文补丁报告", MB_ABORTRETRYIGNORE | MB_ICONWARNING);
-		if (result == IDABORT) {
-			exit(0);
-		}
-		if (result == IDIGNORE) {
-			return CS_DONT_PATCH;
-		}
-		return CS_PATCH;
-	}
-	return CS_PATCH;
-}
 #include <list>
 
 
-void Inject() {
+bool Inject() {
 
 	std::map<void*, void*> replaceTask{
 		//{CreateWindowExA, HookedCreateWindowExA},
@@ -406,8 +343,6 @@ void Inject() {
 			replaceStrTasks.push_back(pair);
 		}
 	}
-
-	bool need_patch_cn = CS_PATCH == CheckSumForGameResources();
 
 	bool FIX_INPUT = false;
 
@@ -434,7 +369,7 @@ void Inject() {
 		auto sec = &pSectionHdr[i];
 		char* name = (char*)sec->Name;
 
-		if (need_patch_cn && strcmp(".text", name) == 0) {
+		if (strcmp(".text", name) == 0) {
 			patchContext.text_beg = (char*)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
 			patchContext.text_end = (char*)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
 		}
@@ -455,7 +390,7 @@ void Inject() {
 		char* name = (char*)pSectionHdr->Name;
 		auto len = pSectionHdr->SizeOfRawData;
 
-		if (need_patch_cn && strcmp(".text", name) == 0) {
+		if (strcmp(".text", name) == 0) {
 			char* sec_begin = (char*)((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress);
 			char* sec_end = (char*)(((unsigned int)base + (unsigned int)pSectionHdr->VirtualAddress + pSectionHdr->SizeOfRawData) & ~3);
 			DWORD oldprotect;
@@ -464,17 +399,19 @@ void Inject() {
 			for (auto& p : patchers) {
 				try {
 					p->Patch();
+					p->success = true;
 					succeedPatchers++;
 				}
 				catch (PatchException e) {
+					p->success = false;
+					p->errorMessage = e.msg;
+
 					if (p->isImportant) {
 						failedImportantPatchers++;
-						failedPatcherMessages << T(L"关键", L"Essential ", L"메인 ");
 					}
 					else {
 						failedPatchers++;
 					}
-					failedPatcherMessages << T(L"补丁“", L"patch \"", L"\"") << p->Name << T(L"”失败：", L"\" failed", L"\" 실패: ") << e.msg << L"\n";
 				}
 			}
 
@@ -515,28 +452,59 @@ void Inject() {
 	int funcStrReplaceExpectedCount = 0;
 	std::wstring funcStrReplaceFailedReport;
 
-	if (need_patch_cn && failedImportantPatchers != 0) {
-		wchar_t buff[1024];
-		wsprintfW(buff, 
-			T(
-				L"中文加载失败。\n关键功能没有补丁成功（补丁成功%d个，关键补丁失败%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，请去除或更新中文补丁。\n错误日志为：",
-				L"Patch failed.\nEssential patch is failed(%d patch succeed, %d essential patch succeed, %d patch failed), your patch program doesn't match the game version, please waiting for update.\nerror log:",
-				L"패치에 실패했습니다.\n메인 패치에 실패했으며(패치 %d개 성공, 메인 패치 %d개 실패, 패치 %d개 실패), 사용 중인 한글패치가 게임 버전과 호환되지 않습니다. 한글패치를 제거하거나 업데이트하세요.\n\n오류 로그: "
-			),
-			succeedPatchers, failedImportantPatchers, failedPatchers);
-		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁加载失败", L"Can't load language patch", L"한글패치 불러오기 실패"), MB_ICONERROR);
-	}
-	else if(need_patch_cn && (failedPatchers != 0) ){
-		wchar_t buff[1024];
-		wsprintfW(buff, T(
-			L"游戏可以继续，但一部分中文不会显示。\n部分非关键功能没有补丁成功（补丁成功%d个，普通补丁失败%d个），您的中文程序与游戏版本不匹配，部分功能将缺失，但游戏依旧可以继续。\n日志为：",
-			L"Game could continue, but part of language will not being translated.\nSome not essential patch didn't success(%d succeed, %d failed). your patch program doesn't match the game version, please waiting for update.\nlog:",
-			L"게임은 진행할 수 있지만, 일부 부분이 번역되지 않습니다.\n일부 기능에 대한 패치에 실패했습니다.(패치 %d개 성공, 패치 %d개 실패) 사용 중인 한글패치가 게임 버전과 호환되지 않으나 게임은 계속 진행할 수 있습니다.\n\n로그:" ),
-			succeedPatchers, failedPatchers);
-		auto errmsg = buff + failedPatcherMessages.str();
-		MessageBoxW(NULL, errmsg.c_str(), T(L"中文补丁部分加载失败", L"Some patch failed", L"일부 패치 실패"), MB_ICONINFORMATION);
-	}
+	DrawImGuiWindowUntil("patch-report", [&]() {
+		ImGui::SeparatorText(T(u8"补丁结果", u8"Patch Result"));
+		if (ImGui::BeginTable("patch-report-table", 4, ImGuiTableFlags_Borders)) {
+			ImGui::TableSetupColumn(T(u8"补丁项目", u8"Patch Item"));
+			ImGui::TableSetupColumn(T(u8"是否重要", u8"Important"));
+			ImGui::TableSetupColumn(T(u8"补丁结果", u8"Patch Result"));
+			ImGui::TableSetupColumn(T(u8"报错信息", u8"Error Message"));
+			ImGui::TableHeadersRow();
+			for (auto& p : patchers) {
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(p->Name);
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(p->isImportant ? T(u8"是", u8"Yes") : T(u8"-"));
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(p->success ? T(u8"成功", u8"Success") : T(u8"失败",u8"Failed"));
+				ImGui::TableNextColumn();
+				if (p->errorMessage.size() > 0) {
+					ImGui::TextUnformatted(p->errorMessage.c_str());
+				}
+			}
+			ImGui::EndTable();
+		}
+
+		for (auto& p : patchers) {
+			if (p->errorMessage.size() > 0) {
+				ImGui::SeparatorText(p->Name);
+				ImGui::TextUnformatted(p->errorMessage.c_str());
+			}
+		}
+
+		ImGui::SeparatorText(T(u8"补丁总结", u8"Conclusion"));
+		if (failedImportantPatchers || failedPatchers) {
+			if (failedImportantPatchers) {
+				ImGui::TextWrapped(T(u8"有关键补丁没有成功，中文无法工作了。", u8"Important patch failed. "));
+			}
+			if (failedPatchers) {
+				ImGui::TextWrapped(T(u8"有一些不重要的补丁没有成功，不过无需担心，只要没有资源错乱，中文大概可以继续使用。"));
+			}
+			ImGui::TextWrapped(T(u8"这说明您的游戏与补丁不完全匹配。\n补丁将通过创意工坊自动同步到最新版本，请等待补丁更新。", u8"Please wait for patch auto update."));
+		}
+		else {
+			ImGui::TextWrapped(T(u8"好极了！中文一切正常，恭喜！你一般来说是看不到这句话的，因为一切正常的情况下我们不会弹出任何界面，这个界面只是用来测试的。"));
+		}
+		if (ImGui::Button(T(u8"继续", u8"Continue")))
+			return true;
+		return false;
+		});
+
+
+	if (failedImportantPatchers)
+		return false;
+	return true;
 }
 
 namespace FileCopy {
@@ -648,12 +616,6 @@ namespace FileCopy {
 				us << L"复活机文件已移除\n";
 			}
 		}
-
-		if (updated) {
-			std::wstring hint = L"已应用中文补丁的配置更新：\n";
-			hint += us.str();
-			MessageBoxW(NULL, hint.c_str(), L"中文补丁配置已更新", MB_ICONINFORMATION);
-		}
 	}
 
 	void InstallModFilesKR(std::wstring mod) {
@@ -674,12 +636,6 @@ namespace FileCopy {
 				us << L"더빙 파일이 제거되었습니다\n";
 			}
 		}
-	
-		if (updated) {
-			std::wstring hint = L"한글패치의 다음 파일이 업데이트됩니다:\n";
-			hint += us.str();
-			MessageBoxW(NULL, hint.c_str(), L"한글패치가 업데이트됨", MB_ICONINFORMATION);
-		}
 	}
 
 	void InstallModFiles(std::wstring mod){
@@ -689,7 +645,44 @@ namespace FileCopy {
 		}
 	}
 }
+std::string WStringToUtf8(const std::wstring& wstr) {
+	if (wstr.empty()) {
+		return {};
+	}
 
+	int size_needed = WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		wstr.data(),
+		static_cast<int>(wstr.size()),
+		nullptr,
+		0,
+		nullptr,
+		nullptr
+	);
+
+	if (size_needed <= 0) {
+		return {};
+	}
+	char* arr = (char*)malloc(size_needed + 10);
+	WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		wstr.data(),
+		static_cast<int>(wstr.size()),
+		arr,
+		size_needed,
+		nullptr,
+		nullptr
+	);
+	if (arr == NULL) {
+		MessageBoxW(NULL, L"MemoryError, Can't malloc.", L"Language Patch Err", 0);
+		return "ERR";
+	}
+	std::string ret = arr;
+	free(arr);
+	return std::move(ret);
+}
 enum ANTI_CHEAT{
 	ANTI_CHEAT_RETRY,
 	ANTI_CHEAT_IGNORE,
@@ -699,6 +692,8 @@ ANTI_CHEAT AvoidAntiCheat();
 extern "C" {
 	// the first release of rgon patch will use this Load function
 	__declspec(dllexport) void Load(const wchar_t* modfolder_root) {
+		ExitImguiLater _exit_imgui_later;
+
 		for (;;) {
 			if (AvoidAntiCheat() == ANTI_CHEAT_IGNORE)
 				break;
@@ -778,41 +773,65 @@ extern "C" {
 					}
 				}
 				if (ng_checksum != game_hash) {
-					wchar_t ascii[128];
-					_itow(game_hash, ascii, 10);
-					std::wstring output = T(L"游戏主程序哈希", L"Isaac main program hash", L"아이작 메인 프로그램 해시 ");
-					output += ascii;
 
-					switch(getLang()){
-						case LANG_CN:
-							output += L"与补丁描述的哈希不匹配。这通常是由于补丁版本不支持当前游戏版本。点否将跳过中文补丁安装，要强制安装吗？\n"
-								L"注意：点“是”将会覆盖游戏文件，如果出现资源错乱，需要校验游戏完整性以进行恢复。\n"
-								L"\n你可以按照以下操作在下次补丁更新之前跳过此提示：\n在配置文件" + cfg + L"中删除内容为“check=";
-						break;
-						case LANG_EN:
-							output += L"Game hash mismatch with config.ini. Press 'no' will skip the install. Force install?"
-								L" Press 'yes' will overwrite the game resource, which maybe not correctly.\n"
-								L"\nYou could remove the following line in 'config.ini' to skip this hint until the mod next update:\n";
-						break;
-						case LANG_KR:
-							output += L"와 패치의 해시가 일치하지 않습니다. 일반적으로 패치 버전이 현재 게임 버전을 지원하지 않는 경우입니다. '아니오'를 선택하면 한글패치 설치를 건너뜁니다. 강제로 설치하시겠습니까?\n"
-								L"\n주의: '예'를 선택하면 게임 파일을 덮어씁니다. 리소스 오류가 발생할 경우 게임 무결성 검사를 통해 복구해야 합니다.\n"
-								L"\n다음 패치 업데이트 전까지 이 안내를 건너뛰려면 다음 단계를 따르세요: \n설정 구성 파일 " + cfg + L"에서\ncheck=";
-						break;
-					}
-					_itow(ng_checksum, ascii, 10);
-					output += ascii;
-					output += T(L"”的行", L"", L" 줄을 삭제하세요");
-					if (IDNO == MessageBoxW(NULL, output.c_str(), T(L"中文补丁不匹配提示", L"Patch not matched the game version", L"한글패치 호환 오류"), MB_ICONINFORMATION | MB_YESNO))
+
+					char ascii[128];
+					_itoa(game_hash, ascii, 10);
+
+					bool try_load = false;
+					bool skip_patch = false;
+					bool remember_selection = false;
+					// 自动选择：其实是一个倒计时后自动选择， TODO
+					DrawImGuiWindowUntil("hash-mismatch", [&]() {
+						ImGui::SeparatorText(T(u8"无法识别的游戏版本",u8"Unknown game version"));
+
+						ImGui::TextWrapped(T(u8"补丁希望的哈希值是：%d"), game_hash);
+						ImGui::TextWrapped(T(u8"游戏实际的哈希值是：%d"), ng_checksum);
+
+						ImGui::TextWrapped(T(u8"这个中文补丁不是给当前游戏设计的！不过，你可以尝试加载："));
+						if (ImGui::Button(T(u8"尝试加载中文补丁"))) {
+							try_load = true;
+							return true;
+						}
+						ImGui::TextWrapped(T(u8"也可以跳过补丁"));
+						if(ImGui::Button(T(u8"跳过补丁"))){
+							skip_patch = true;
+							return true;
+						}
+
+						ImGui::Checkbox(T(u8"记住选择，下次进入游戏选择相同选项"), &remember_selection);
+						return false;
+						});
+
+					if (skip_patch) {
 						return;
+					}
+					if (remember_selection) {
+						//TODO
+						//create file
+					}
 				}
 			}
 		}
 
+		if (!Inject()) {
+			return;
+		}
 		if (config.GetOrDefault("option", "skipcopy", "0") == "0") {
 			FileCopy::InstallModFiles(modfolder_root);
+			if (FileCopy::updated) {
+				std::string str = std::move(WStringToUtf8(std::move(FileCopy::us.str())));
+				DrawImGuiWindowUntil("file-update-report", [&]() {
+					ImGui::SeparatorText(T(u8"已应用中文补丁的配置更新", u8"LangHackRep+ has updated resources", u8"한글패치의 다음 파일이 업데이트됩니다"));
+					ImGui::TextWrapped("%s", str.c_str());
+					if (ImGui::Button(T(u8"继续", u8"Continue"))) {
+						return true;
+					}
+					return false;
+					});
+			}
 		}
-		Inject();
+
 	}
 
 	//latest will use this function for rgon mod loader
@@ -855,36 +874,58 @@ ANTI_CHEAT AvoidAntiCheat() {
 	pe.dwSize = sizeof(pe);
 	if (!Process32First(snapshot, &pe))
 		return ANTI_CHEAT_IGNORE;
+
+	std::string anti_cheats;
+
 	do{
 		for(int i=0;anti_cheat_processes[i];i++){
 			if(_strcmpi(pe.szExeFile, anti_cheat_processes[i]) == 0){
-				wchar_t msg[2048];
-				wsprintfW(msg, T(
-						L"警告：已检测到反作弊系统(%S)，中文补丁与该反作弊系统可能不兼容，继续游戏可能导致错误或错误封禁账号。请避免在反作弊系统生效的情况下使用此补丁。\n中止=退出游戏，重试=重新检测，忽略=继续游戏",
-						L"Anti system(%S) detected, which maybe not compat with LangHackRep+, continue may cause error or account ban in that game. Please avoid use this program while anti cheat system is activated.\n Press abort to exit the game now, retry to detect again, ignore to continue game.",
-						L"안티치트(%S)가 감지되었습니다. LangHackRep+는 해당 안티치트와 호환되지 않을 수 있으며, 게임을 계속할 경우 오류가 발생하거나 해당 안티치트를 사용하는 게임에서 무고밴을 당할 수 있습니다. 안티치트가 활성화된 상황에서 이 패치를 사용하지 마십시오.\n 중단: 프로그램을 종료합니다\n 다시 시도: 프로그램을 재검증합니다\n 무시: 경고를 무시하고 게임을 재개합니다"),
-						pe.szExeFile
-					);
-				auto ret = MessageBoxW(NULL,
-					msg,
-					T(
-						L"反作弊系统兼容性提示",
-						L"Anti Cheat System Compat Report",
-						L"안티치트 호환성 안내"
-					),
-					MB_ICONWARNING | MB_ABORTRETRYIGNORE);
-
-				if (ret == IDABORT) {
-					exit(0);
+				if (anti_cheats.size() > 0) {
+					anti_cheats += ", ";
 				}
-				if (ret == IDRETRY) {
-					return ANTI_CHEAT_RETRY;
-				}
+				anti_cheats += pe.szExeFile;
 			}
 		}
 	}while (Process32Next(snapshot, &pe));
 
 	CloseHandle(snapshot);
+
+	if (anti_cheats.size() > 0) {
+		bool exit_game = false;
+		bool retry = false;
+		bool ignore = false;
+		DrawImGuiWindowUntil("anti-cheat-window", [&]() {
+			ImGui::Text(T(
+				u8"警告：已检测到反作弊系统(%s)，中文补丁与该反作弊系统可能不兼容，继续游戏可能导致错误或错误封禁账号。请避免在反作弊系统生效的情况下使用此补丁。",
+				u8"Anti system(%s) detected, which maybe not compat with LangHackRep+, continue may cause error or account ban in that game. Please avoid use this program while anti cheat system is activated.",
+				u8"안티치트(%s)가 감지되었습니다. LangHackRep+는 해당 안티치트와 호환되지 않을 수 있으며, 게임을 계속할 경우 오류가 발생하거나 해당 안티치트를 사용하는 게임에서 무고밴을 당할 수 있습니다. 안티치트가 활성화된 상황에서 이 패치를 사용하지 마십시오."),
+				anti_cheats.c_str()
+			);
+			if (ImGui::Button(
+				T(u8"退出游戏", u8"Exit Game", u8"프로그램을 종료합니다")
+			)) {
+				exit_game = true;
+				return true;
+			}
+			if (ImGui::Button(T(u8"重新检测", u8"Retry", u8"프로그램을 재검증합니다"))) {
+				retry = true;
+				return true;
+			}
+			if (ImGui::Button(T(u8"忽略，继续补丁", u8"경고를 무시하고 게임을 재개합니다"))) {
+				ignore = true;
+				return true;
+			}
+			return false;
+			});
+
+		if (exit_game) {
+			exit(0);
+		}
+		if (retry) {
+			return ANTI_CHEAT_RETRY;
+		}
+	}
+
 	return ANTI_CHEAT_IGNORE;
 }
 

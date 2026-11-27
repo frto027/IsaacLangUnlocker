@@ -8,15 +8,19 @@ struct PatchContext {
 };
 
 struct PatchException {
-	std::wstring msg;
-	PatchException(std::wstring msg) :msg(msg) {}
+	std::string msg;
+	PatchException(std::string msg) :msg(msg) {}
 };
 
 class Patcher {
 public:
 	bool isImportant = false;
-	const wchar_t* Name = L"占位Patcher";
+	const char* Name = u8"占位Patcher";
 	virtual void Patch() = 0;
+
+	// patch results:
+	bool success = false;
+	std::string errorMessage;
 	//{
 	//	throw PatchException(L"未实现的补丁");
 	//}

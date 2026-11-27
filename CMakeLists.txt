@@ -16,9 +16,21 @@ add_subdirectory("zydis")
 add_library(inject SHARED
     injector/dllmain.cpp
     injector/patchers.cpp
+    injector/imgui_driver.cpp
+    injector/imgui_windows.cpp
+
+    imgui/imgui.cpp
+    imgui/imgui_widgets.cpp
+    imgui/imgui_draw.cpp
+    imgui/imgui_tables.cpp
+    imgui/backends/imgui_impl_opengl3.cpp
+    imgui/backends/imgui_impl_win32.cpp
 )
-target_link_libraries(inject
-    dbghelp.lib Winmm.lib Shlwapi.lib Zydis Imm32.lib
+
+target_include_directories(inject PRIVATE imgui imgui/backends)
+
+target_link_libraries(inject PUBLIC
+    dbghelp.lib Winmm.lib Shlwapi.lib Zydis Imm32.lib opengl32.lib
 )
 
 ########## bootstrap #########
